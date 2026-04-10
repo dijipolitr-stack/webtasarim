@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Müşteri Bilgi Paneli</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--teal:#1D9E75;--teal-light:#E1F5EE;--teal-dark:#0F6E56;--teal-mid:#9FE1CB;--amber:#BA7517;--amber-light:#FAEEDA;--red-light:#FCEBEB;--red:#A32D2D;--border:#e0ddd6;--bg:#f7f6f3;--bg2:#ffffff;--bg3:#f0efe9;--text:#1a1a18;--text2:#666660;--text3:#999990;--radius:8px;--radius-lg:12px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+.panel{display:flex;height:100vh;max-height:100vh}
+/* SIDEBAR */
+.sb{width:210px;min-width:210px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sb-top{padding:16px 16px 12px;border-bottom:1px solid var(--border)}
+.sb-brand{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+.sb-title{font-size:15px;font-weight:600;color:var(--text)}
+nav{flex:1;padding:6px 0;overflow-y:auto}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 15px;cursor:pointer;font-size:13px;color:var(--text2);border:none;background:none;width:100%;text-align:left;transition:background .1s;font-family:inherit}
+.ni:hover{background:var(--bg3);color:var(--text)}
+.ni.active{background:var(--bg3);color:var(--text);font-weight:600}
+.ni.app-ni{color:var(--text3)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background .2s}
+.dot.app{background:var(--teal)}.dot.rev{background:var(--amber)}.dot.pend{background:#ccc}
+.sb-bot{padding:14px 14px 16px;border-top:1px solid var(--border)}
+.pb-row{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:6px}
+.pb-track{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:12px}
+.pb-fill{height:100%;background:var(--teal);border-radius:2px;transition:width .3s}
+.btn-green{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:9px;font-size:13px;font-weight:600;border:none;border-radius:var(--radius);cursor:pointer;background:var(--teal);color:#fff;font-family:inherit;transition:background .15s;margin-bottom:8px}
+.btn-green:hover{background:var(--teal-dark)}
+.btn-ghost{font-size:11px;color:var(--text3);text-align:center;cursor:pointer;padding:4px;border:none;background:none;width:100%;font-family:inherit}
+.btn-ghost:hover{color:var(--text2);text-decoration:underline}
+.btn-outline{display:flex;align-items:center;gap:6px;width:100%;padding:9px 12px;font-size:13px;border:1.5px solid var(--border);border-radius:var(--radius);cursor:pointer;background:var(--bg2);color:var(--text2);font-family:inherit;transition:all .15s;margin-bottom:8px}
+.btn-outline:hover{background:var(--bg3);border-color:#ccc;color:var(--text)}
+.btn-rf{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:8px;font-size:13px;border:1.5px solid var(--border);border-radius:var(--radius);cursor:pointer;background:var(--bg2);color:var(--text2);font-family:inherit}
+.btn-rf:hover{background:var(--bg3)}
+/* CONTENT */
+.ct{flex:1;overflow-y:auto;padding:20px;background:var(--bg)}
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;margin-bottom:14px}
+.card.locked{border-color:var(--teal);border-width:1.5px}
+.card-title{font-size:16px;font-weight:700;margin-bottom:4px}
+.card-desc{font-size:13px;color:var(--text2);margin-bottom:18px}
+/* FORM */
+label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+input[type=text],input[type=url],input[type=email],input[type=date],input[type=password],select,textarea{width:100%;padding:9px 12px;font-size:14px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-family:inherit;outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--teal)}
+textarea{resize:vertical;min-height:80px;line-height:1.6}
+.fg{margin-bottom:14px}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+/* TYPE GRID */
+.tg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px}
+.tb{padding:10px 5px;border:1.5px solid var(--border);border-radius:var(--radius);cursor:pointer;background:var(--bg2);color:var(--text2);font-size:11.5px;font-family:inherit;text-align:center;line-height:1.4;transition:all .1s}
+.tb:hover{background:var(--bg3);border-color:#ccc}
+.tb.sel{border-color:var(--teal);background:var(--teal-light);color:var(--teal-dark);font-weight:600}
+/* COLORS */
+.cr{display:flex;gap:9px;flex-wrap:wrap;margin-top:7px;align-items:flex-end}
+.cpw{display:flex;flex-direction:column;align-items:center;gap:3px}
+.cpw input[type=color]{width:38px;height:34px;padding:3px;border:1.5px solid var(--border);border-radius:var(--radius);cursor:pointer}
+.cl{font-size:10px;color:var(--text3)}
+.btn-addcolor{width:38px;height:34px;border:1.5px dashed var(--border);border-radius:var(--radius);cursor:pointer;background:none;color:var(--text3);font-size:20px;display:flex;align-items:center;justify-content:center;font-family:inherit}
+/* UPLOAD */
+.ua{border:2px dashed var(--border);border-radius:var(--radius);padding:20px;text-align:center;cursor:pointer;background:var(--bg3);transition:all .15s;position:relative}
+.ua:hover{border-color:var(--teal);background:var(--teal-light)}
+.ua input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.ua-icon{font-size:22px;color:var(--text3);margin-bottom:5px}
+.ua-text{font-size:13px;color:var(--text2)}
+.fp{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--bg3);margin-top:7px}
+.fp img{width:36px;height:36px;object-fit:cover;border-radius:5px}
+.fpt{flex:1;font-size:13px;color:var(--text2)}
+.btn-fc{background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:0 4px;line-height:1;font-family:inherit}
+.btn-fc:hover{color:var(--red)}
+/* DYNAMIC LISTS */
+.li{border:1.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:9px;background:var(--bg3)}
+.lih{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.lin{font-size:13px;font-weight:600;color:var(--text2)}
+.btn-rm{padding:4px 10px;font-size:12px;border:1.5px solid var(--border);border-radius:var(--radius);cursor:pointer;background:var(--bg2);color:var(--text2);font-family:inherit;transition:all .1s}
+.btn-rm:hover{background:var(--red-light);color:var(--red);border-color:#F09595}
+.btn-add{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;font-size:13px;border:2px dashed var(--border);border-radius:var(--radius);cursor:pointer;background:none;color:var(--text2);width:100%;font-family:inherit;transition:all .1s}
+.btn-add:hover{background:var(--bg3);border-color:#ccc}
+/* NAV BUTTON */
+.btn-next{display:inline-flex;align-items:center;padding:9px 18px;font-size:13px;font-weight:600;border:none;border-radius:var(--radius);cursor:pointer;background:var(--teal);color:#fff;font-family:inherit;transition:background .15s}
+.btn-next:hover{background:var(--teal-dark)}
+/* BADGES */
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:600}
+.b-app{background:var(--teal-light);color:var(--teal-dark)}
+.b-rev{background:var(--amber-light);color:#6B3A00}
+.b-pend{background:var(--bg3);color:var(--text2)}
+.b-info{background:#dbeafe;color:#1e40af}
+.b-comp{background:var(--teal-light);color:var(--teal-dark)}
+/* SAVE IND */
+.si{font-size:11px;color:var(--teal);text-align:right;height:15px;opacity:0;transition:opacity .3s;margin-top:5px}
+.si.show{opacity:1}
+/* REVISION BANNER */
+.rvb{background:var(--amber-light);border:1.5px solid var(--amber);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px}
+/* SUMMARY ROWS */
+.srow{display:flex;gap:10px;padding:4px 0;font-size:13px}
+.sk{color:var(--text2);min-width:115px;flex-shrink:0}
+.sv{color:var(--text);flex:1;word-break:break-word}
+.cprev{display:inline-block;width:13px;height:13px;border-radius:3px;border:1px solid var(--border);vertical-align:middle;margin-right:4px}
+/* CHECKBOX */
+.ckr{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;padding:6px 0}
+.ckr input{width:auto;cursor:pointer;accent-color:var(--teal)}
+/* DIVIDER */
+.div-line{border-top:1px solid var(--border);padding-top:14px;margin-top:4px}
+/* OZET STATUS ROWS */
+.oz-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius);margin-bottom:6px;cursor:pointer;transition:opacity .15s}
+.oz-row:hover{opacity:.85}
+.oz-row.locked-row{cursor:default}
+/* SUBMIT */
+.btn-submit{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;font-size:15px;font-weight:700;border:none;border-radius:var(--radius);cursor:pointer;background:var(--teal);color:#fff;font-family:inherit;transition:background .15s;margin-top:14px}
+.btn-submit:hover{background:var(--teal-dark)}
+.btn-reset{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:9px;font-size:13px;border:1.5px solid var(--border);border-radius:var(--radius);cursor:pointer;background:var(--bg2);color:var(--text2);font-family:inherit;transition:all .15s;margin-top:8px}
+.btn-reset:hover{background:var(--red-light);color:var(--red)}
+/* SUBMITTED BANNER */
+.sub-banner{display:flex;align-items:center;gap:12px;background:var(--teal-light);border:1.5px solid var(--teal);border-radius:var(--radius);padding:14px 18px;margin-top:14px}
+/* DASHBOARD */
+.subcard{background:var(--bg2);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;margin-bottom:12px}
+.subhdr{display:flex;align-items:center;gap:9px;margin-bottom:10px;flex-wrap:wrap}
+.subfirma{font-size:15px;font-weight:700;flex:1;min-width:80px}
+.subts{font-size:11px;color:var(--text3)}
+.substats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+.statbox{background:var(--bg3);border-radius:var(--radius);padding:8px 11px}
+.statlbl{font-size:10px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
+.statval{font-size:14px;font-weight:700}
+.subftr{display:flex;gap:7px;align-items:center}
+.btn-dl{padding:6px 12px;font-size:12px;border:none;border-radius:var(--radius);cursor:pointer;background:var(--teal);color:#fff;font-family:inherit}
+.btn-dl:hover{background:var(--teal-dark)}
+.btn-det{padding:6px 12px;font-size:12px;border:1.5px solid var(--border);border-radius:var(--radius);cursor:pointer;background:var(--bg2);color:var(--text2);font-family:inherit}
+.btn-det:hover{background:var(--bg3)}
+.btn-del{padding:6px 12px;font-size:12px;border:1.5px solid var(--border);border-radius:var(--radius);cursor:pointer;background:var(--bg2);color:var(--text2);font-family:inherit;margin-left:auto}
+.btn-del:hover{background:var(--red-light);color:var(--red)}
+.subdet{border-top:1.5px solid var(--border);padding-top:12px;margin-top:10px}
+.sec-rev-row{border:1.5px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:7px}
+.sec-rev-hdr{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.sec-rev-name{font-size:13px;font-weight:600;flex:1}
+.sec-rev-inputs{display:flex;gap:7px;align-items:center}
+.btn-app-sm{padding:5px 10px;font-size:12px;border:none;border-radius:var(--radius);cursor:pointer;background:var(--teal);color:#fff;font-family:inherit;white-space:nowrap}
+.btn-rev-sm{padding:5px 10px;font-size:12px;border:1.5px solid var(--amber);border-radius:var(--radius);cursor:pointer;background:var(--amber-light);color:#6B3A00;font-family:inherit;white-space:nowrap}
+.emsg{font-size:13px;color:var(--red);min-height:18px;margin-top:7px}
+/* LOGIN */
+.login-wrap{max-width:300px;margin:30px auto}
+/* MOBILE HEADER */
+.mob-hdr{display:none;align-items:center;justify-content:space-between;padding:13px 16px;background:var(--bg2);border-bottom:1.5px solid var(--border);position:sticky;top:0;z-index:90}
+.mob-hdr-brand{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em}
+.mob-hdr-sec{font-size:15px;font-weight:700;color:var(--text);margin-top:1px}
+.mob-ham{background:none;border:1.5px solid var(--border);border-radius:var(--radius);padding:8px 13px;font-size:20px;line-height:1;cursor:pointer;color:var(--text);font-family:inherit}
+.sb-close-row{display:none;justify-content:space-between;align-items:center;padding:13px 15px;border-bottom:1.5px solid var(--border);background:var(--bg2)}
+.sb-close-brand{font-size:14px;font-weight:700;color:var(--text)}
+.btn-close-sb{background:none;border:1.5px solid var(--border);border-radius:var(--radius);padding:6px 13px;font-size:16px;cursor:pointer;color:var(--text);font-family:inherit}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:109;opacity:0;pointer-events:none;transition:opacity .25s}
+.sb-overlay.show{opacity:1;pointer-events:auto}
+@media(max-width:860px){
+  .panel{flex-direction:column;height:auto;min-height:100vh}
+  .mob-hdr{display:flex}
+  .sb{position:fixed;top:0;left:-100%;width:82%;max-width:300px;height:100%;z-index:110;border-radius:0;border-right:1.5px solid var(--border);overflow-y:auto;transition:left .26s ease}
+  .sb.open{left:0}
+  .sb-overlay{display:block}
+  .sb-close-row{display:flex}
+  .ct{padding:14px 12px}
+}
+@media(max-width:500px){
+  .r2{grid-template-columns:1fr!important}
+  .tg{grid-template-columns:repeat(2,1fr)!important}
+  .substats{grid-template-columns:1fr 1fr}
+  .subftr{flex-wrap:wrap}
+  .subftr .btn-del{margin-left:0}
+  .sec-rev-inputs{flex-direction:column}
+  .sec-rev-inputs input[type=text]{width:100%}
+  .card{padding:15px 14px}
+  .subcard{padding:13px 12px}
+}
+@media(min-width:861px){
+  .mob-hdr{display:none!important}
+  .sb-close-row{display:none!important}
+  .sb{position:static!important;left:0!important}
+  .tg{grid-template-columns:repeat(4,1fr)}
+}
+</style>
+</head>
+<body>
+<!-- Mobile header bar -->
+<div class="mob-hdr" id="mob-hdr">
+  <div>
+    <p class="mob-hdr-brand">Web Tasarım</p>
+    <p class="mob-hdr-sec" id="mob-sec">Müşteri Paneli</p>
+  </div>
+  <button class="mob-ham" onclick="toggleNav()" aria-label="Menü">☰</button>
+</div>
+<!-- Overlay backdrop -->
+<div class="sb-overlay" id="sb-overlay" onclick="closeNav()"></div>
+<div class="panel">
+  <aside class="sb" id="sb-aside">
+    <!-- Mobile close row -->
+    <div class="sb-close-row">
+      <span class="sb-close-brand">Menü</span>
+      <button class="btn-close-sb" onclick="closeNav()">✕</button>
+    </div>
+    <div class="sb-top">
+      <p class="sb-brand">Web Tasarım</p>
+      <p class="sb-title" id="sbt">Müşteri Paneli</p>
+    </div>
+    <nav id="nav"></nav>
+    <div class="sb-bot" id="sbb"></div>
+  </aside>
+  <main class="ct" id="ca">
+    <div style="padding:40px;text-align:center;color:var(--text2)">Yükleniyor...</div>
+  </main>
+</div>
+<script>
+/* ── CONFIG ─────────────────────────────── */
+const DC='tasarim'; // Tasarımcı erişim kodu — buradan değiştirin
+const STORAGE_KEY='wp_mpv1'; // localStorage anahtarı
+
+/* ── CONSTANTS ──────────────────────────── */
+const FS=['proje','marka','metinler','urunler','medya','rakipler','teknik'];
+const SLS={proje:'Proje Bilgileri',marka:'Marka Kimliği',metinler:'İçerik Metinleri',urunler:'Ürünler & Hizmetler',medya:'Medya',rakipler:'Rakip Siteler',teknik:'Teknik Detaylar'};
+const STLS={kurumsal:'Kurumsal / Tanıtım',eticaret:'E-ticaret',portfolio:'Portfolio',blog:'Blog / Haber',kisisel:'Kişisel',restoran:'Restoran / Cafe',saglik:'Sağlık / Klinik',egitim:'Eğitim'};
+const secs=[{id:'proje',lb:'Proje Bilgileri'},{id:'marka',lb:'Marka Kimliği'},{id:'metinler',lb:'İçerik Metinleri'},{id:'urunler',lb:'Ürünler & Hizmetler'},{id:'medya',lb:'Medya'},{id:'rakipler',lb:'Rakip Siteler'},{id:'teknik',lb:'Teknik Detaylar'},{id:'ozet',lb:'Özet & Gönder'}];
+
+/* ── STATE ──────────────────────────────── */
+let mode='form', curSec='proje', expanded=new Set(), autoRT=null;
+const fr=()=>({proje:{siteType:'',firmaAdi:'',sektor:'',hedefKitle:'',butce:'',deadline:'',aciklama:''},marka:{logo:null,logoName:'',renkler:['#1D9E75','#085041'],fontTercihi:'',markaNot:''},metinler:{slogan:'',altBaslik:'',ctaButon:'',hakkimizda:'',vizyon:'',misyon:'',degerlerimiz:'',hizmetler:'',nedenBiz:'',referanslar:[],sss:[],ekip:'',footerMetin:'',telif:'',telefon:'',email:'',adres:'',calismaS:''},urunler:[],medya:{gorseller:[],videolar:[]},rakipler:[],teknik:{domainDurumu:'',domainAdi:'',hostingTercihi:'',ssl:false,instagram:'',facebook:'',linkedin:'',twitter:'',youtube:'',ekNotlar:''}});
+let D=fr();
+let SS=Object.fromEntries(FS.map(s=>[s,'pending'])); // sectionStatus
+let AN=Object.fromEntries(FS.map(s=>[s,'']));         // adminNotes
+let OS='draft'; // overallStatus
+
+/* ── SESSION ID ─────────────────────────── */
+let sid;
+try{sid=localStorage.getItem('wp_sid');if(!sid){sid=Date.now().toString(36)+Math.random().toString(36).slice(2,8);localStorage.setItem('wp_sid',sid);localStorage.setItem('wp_st',Date.now());}}catch(x){sid='a'+Math.random().toString(36).slice(2,8);}
+
+/* ── INIT ───────────────────────────────── */
+async function init(){
+  let loaded=false;
+  // 1) Try shared storage (real-time sync)
+  try{
+    const r=await window.storage.get('sub:'+sid,true);
+    if(r?.value){
+      const en=JSON.parse(r.value);
+      if(en.sectionStatus)SS={...SS,...en.sectionStatus};
+      if(en.adminNotes)AN={...AN,...en.adminNotes};
+      if(en.status)OS=en.status;
+      if(en.data){const df=fr(),ld=en.data;D={...df,...ld,proje:{...df.proje,...(ld.proje||{})},marka:{...df.marka,...(ld.marka||{})},metinler:{...df.metinler,...(ld.metinler||{})},medya:{...df.medya,...(ld.medya||{})},teknik:{...df.teknik,...(ld.teknik||{})}};}
+      loaded=true;
+    }
+  }catch(x){}
+  // 2) Fallback: localStorage
+  if(!loaded){
+    try{
+      const s=localStorage.getItem(STORAGE_KEY);
+      if(s){const ld=JSON.parse(s),df=fr();if(ld.data)D={...df,...ld.data,proje:{...df.proje,...(ld.data.proje||{})},marka:{...df.marka,...(ld.data.marka||{})},metinler:{...df.metinler,...(ld.data.metinler||{})},medya:{...df.medya,...(ld.data.medya||{})},teknik:{...df.teknik,...(ld.data.teknik||{})}};if(ld.SS)SS={...SS,...ld.SS};if(ld.AN)AN={...AN,...ld.AN};if(ld.OS)OS=ld.OS;}
+    }catch(x){}
+  }
+  // Navigate to first section that needs attention
+  const first=secs.find(s=>FS.includes(s.id)&&SS[s.id]!=='approved');
+  if(first)curSec=first.id;
+  rSB();rC();updMobSec();
+}
+
+/* ── SAVE ───────────────────────────────── */
+async function sv(){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify({data:D,SS,AN,OS}));}catch(x){}
+  updP();
+  const si=document.getElementById('si');
+  if(si){si.classList.add('show');clearTimeout(si._t);si._t=setTimeout(()=>si.classList.remove('show'),1500);}
+  try{
+    let en;
+    try{const r=await window.storage.get('sub:'+sid,true);en=r?.value?JSON.parse(r.value):mkEntry();}catch(x){en=mkEntry();}
+    en.data=D;en.lastUpdated=Date.now();en.firmaAdi=D.proje.firmaAdi||'İsimsiz';en.siteType=D.proje.siteType||'';en.progress=pct();
+    if(!en.sectionStatus)en.sectionStatus={...SS};
+    if(!en.adminNotes)en.adminNotes={...AN};
+    await window.storage.set('sub:'+sid,JSON.stringify(en),true);
+  }catch(x){}
+}
+
+function mkEntry(){return{sessionId:sid,firmaAdi:D.proje.firmaAdi||'İsimsiz',siteType:D.proje.siteType||'',lastUpdated:Date.now(),startedAt:parseInt(localStorage.getItem('wp_st')||Date.now()),status:OS,progress:pct(),sectionStatus:{...SS},adminNotes:{...AN},data:D};}
+
+/* ── PROGRESS ───────────────────────────── */
+function pct(){let f=0;if(D.proje.firmaAdi&&D.proje.siteType)f++;if(D.marka.renkler.length)f++;if(D.metinler.hakkimizda||D.metinler.slogan)f++;if(D.urunler.length)f++;if((D.medya.gorseller||[]).length||(D.medya.videolar||[]).length)f++;if(D.rakipler.length)f++;if(D.teknik.domainDurumu)f++;return Math.round(f/7*100);}
+function dc(id){const s=SS[id];return'dot'+(s==='approved'?' app':s==='revision'?' rev':' pend');}
+function updP(){const p=pct();const f=document.getElementById('pf'),l=document.getElementById('pl');if(f)f.style.width=p+'%';if(l)l.textContent=p+'%';secs.forEach(s=>{const d=document.getElementById('d-'+s.id);if(d)d.className=dc(s.id);});}
+
+/* ── SIDEBAR ────────────────────────────── */
+function rSB(){
+  const nav=document.getElementById('nav'),bot=document.getElementById('sbb'),tit=document.getElementById('sbt');
+  if(mode==='form'){
+    if(tit)tit.textContent='Müşteri Paneli';
+    nav.innerHTML=secs.map(s=>{
+      const app=FS.includes(s.id)&&SS[s.id]==='approved';
+      const rev=FS.includes(s.id)&&SS[s.id]==='revision';
+      return`<button class="ni${curSec===s.id?' active':''}${app?' app-ni':''}" onclick="gt('${s.id}')"><span class="${dc(s.id)}" id="d-${s.id}"></span>${s.lb}${rev?' ⚠':''}</button>`;
+    }).join('');
+    const p=pct();
+    bot.innerHTML=`<div class="pb-row"><span>İlerleme</span><span id="pl">${p}%</span></div><div class="pb-track"><div class="pb-fill" id="pf" style="width:${p}%"></div></div><button class="btn-green" onclick="doEx()">↓ JSON İndir</button><button class="btn-ghost" onclick="sDL()">◆ Tasarımcı Girişi</button>`;
+  }else{
+    if(tit)tit.textContent='Tasarımcı';
+    nav.innerHTML=`<div style="padding:10px 15px;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-weight:600">Müşteri Yanıtları</div>`;
+    bot.innerHTML=`<button class="btn-outline" onclick="exD()">← Müşteri Formuna Dön</button><button class="btn-rf" onclick="rD()">↻ Yenile</button>`;
+  }
+}
+
+/* ── HELPERS ────────────────────────────── */
+function gt(id){curSec=id;closeNav();rSB();rC();updMobSec();}
+function updMobSec(){const s=secs.find(x=>x.id===curSec);const el=document.getElementById('mob-sec');if(el&&s)el.textContent=s.lb;}
+function toggleNav(){const sb=document.getElementById('sb-aside'),ov=document.getElementById('sb-overlay');sb.classList.toggle('open');ov.classList.toggle('show');}
+function closeNav(){const sb=document.getElementById('sb-aside'),ov=document.getElementById('sb-overlay');if(sb)sb.classList.remove('open');if(ov)ov.classList.remove('show');}
+function ec(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function sF(s,k,v){D[s][k]=v;sv();}
+function sR(s,k,v){D[s][k]=v;sv();rC();}
+function fd(ts){try{return new Date(ts).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});}catch(x){return '—';}}
+
+function nxBtn(cid){
+  const ci=secs.findIndex(s=>s.id===cid);
+  const nx=secs.slice(ci+1).find(s=>FS.includes(s.id)&&SS[s.id]!=='approved');
+  const t=nx?nx.id:'ozet';
+  return`<button class="btn-next" onclick="gt('${t}')">${nx?'Sonraki: '+nx.lb+' →':'Özet & Gönder →'}</button>`;
+}
+
+function sRow(k,v){return v?`<div class="srow"><span class="sk">${k}</span><span class="sv">${ec(String(v))}</span></div>`:''}
+
+function buildSum(id){
+  if(id==='proje'){const p=D.proje;return sRow('Site türü',STLS[p.siteType])+sRow('Firma',p.firmaAdi)+sRow('Sektör',p.sektor)+sRow('Hedef kitle',p.hedefKitle)+sRow('Bütçe',p.butce)+sRow('Teslim tarihi',p.deadline)+(p.aciklama?sRow('Açıklama',p.aciklama.slice(0,80)+(p.aciklama.length>80?'...':'')):'')}
+  if(id==='marka'){const m=D.marka;return sRow('Logo',m.logo?'✓ Yüklendi':'—')+`<div class="srow"><span class="sk">Renkler</span><span class="sv">${m.renkler.map(c=>`<span class="cprev" style="background:${c}"></span>${c}`).join('  ')}</span></div>`+sRow('Font tercihi',m.fontTercihi)}
+  if(id==='metinler'){const mt=D.metinler;return sRow('Slogan',mt.slogan)+sRow('Alt başlık',mt.altBaslik)+sRow('CTA butonu',mt.ctaButon)+sRow('Vizyon',mt.vizyon?mt.vizyon.slice(0,60)+'...':'')+sRow('Misyon',mt.misyon?mt.misyon.slice(0,60)+'...':'')+sRow('Neden biz',mt.nedenBiz?mt.nedenBiz.slice(0,60)+'...':'')+sRow('Referans sayısı',(mt.referanslar||[]).length+' adet')+sRow('SSS sayısı',(mt.sss||[]).length+' soru')+sRow('Telefon',mt.telefon)+sRow('E-posta',mt.email)+sRow('Adres',mt.adres)+sRow('Çalışma saatleri',mt.calismaS)}
+  if(id==='urunler')return D.urunler.length?D.urunler.map((u,i)=>sRow(`Ürün #${i+1}`,u.ad+(u.fiyat?' — '+u.fiyat:''))).join(''):`<p style="font-size:13px;color:var(--text3)">Eklenmedi</p>`;
+  if(id==='medya')return sRow('Görseller',(D.medya.gorseller||[]).length+' adet')+sRow('Videolar',(D.medya.videolar||[]).length+' adet');
+  if(id==='rakipler')return D.rakipler.length?D.rakipler.map((r,i)=>sRow(`#${i+1}`,r.url)).join(''):`<p style="font-size:13px;color:var(--text3)">Eklenmedi</p>`;
+  if(id==='teknik'){const t=D.teknik;return sRow('Domain',t.domainAdi||t.domainDurumu)+sRow('Hosting',t.hostingTercihi)}
+  return '';
+}
+
+/* ── CONTENT ROUTER ─────────────────────── */
+function rC(){
+  if(mode==='designer'){rD();return;}
+  const ca=document.getElementById('ca');
+  if(FS.every(s=>SS[s]==='approved')||OS==='completed'){
+    ca.innerHTML=`<div class="card locked" style="text-align:center;padding:30px"><div style="font-size:48px;margin-bottom:14px">✓</div><h2 style="color:var(--teal-dark);margin-bottom:8px">Tüm bilgiler onaylandı!</h2><p style="color:var(--text2)">Tasarımcı web sitesi yapım sürecini başlatabilir. Teşekkür ederiz.</p></div>`;
+    return;
+  }
+  if(curSec==='ozet'){ca.innerHTML=rOz();updP();updMobSec();return;}
+  const st=SS[curSec];
+  if(st==='approved'){
+    ca.innerHTML=`<div class="card locked"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><h2 style="font-size:17px;font-weight:700;flex:1">${SLS[curSec]}</h2><span class="badge b-app">✓ Onaylandı</span></div><p style="font-size:13px;color:var(--text2);margin-bottom:14px">Bu bölüm tasarımcı tarafından onaylandı ve kilitlendi. Değişiklik yapılamaz.</p>${buildSum(curSec)}<div style="display:flex;justify-content:flex-end;margin-top:14px">${nxBtn(curSec)}</div></div>`;
+    return;
+  }
+  const banner=st==='revision'?`<div class="rvb"><p style="font-size:13px;font-weight:700;color:#6B3A00;margin-bottom:3px">⚠ Tasarımcı bu bölümde düzeltme istedi</p>${AN[curSec]?`<p style="font-size:13px;color:#6B3A00">Not: ${ec(AN[curSec])}</p>`:''}</div>`:'';
+  const map={proje:rPr,marka:rMk,metinler:rMt,urunler:rUr,medya:rMd,rakipler:rRk,teknik:rTk};
+  ca.innerHTML=banner+(map[curSec]||rPr)();
+  updP();
+}
+
+/* ── FORM SECTIONS ──────────────────────── */
+function rPr(){
+  const d=D.proje,T=[['kurumsal','Kurumsal / Tanıtım'],['eticaret','E-ticaret'],['portfolio','Portfolio'],['blog','Blog / Haber'],['kisisel','Kişisel'],['restoran','Restoran / Cafe'],['saglik','Sağlık / Klinik'],['egitim','Eğitim']];
+  return`<div class="card"><h2 class="card-title">Proje bilgileri</h2><p class="card-desc">Firmanız ve web sitesi projeniz hakkında temel bilgiler.</p>
+  <div class="fg"><label>Site türü *</label><div class="tg">${T.map(([v,l])=>`<button class="tb${d.siteType===v?' sel':''}" onclick="sR('proje','siteType','${v}')">${l}</button>`).join('')}</div></div>
+  <div class="r2" style="margin-top:12px"><div class="fg"><label>Firma / Marka adı *</label><input type="text" value="${ec(d.firmaAdi)}" placeholder="Örn: Acme Teknoloji" oninput="sF('proje','firmaAdi',this.value)"></div><div class="fg"><label>Sektör</label><input type="text" value="${ec(d.sektor)}" placeholder="Yazılım, Gıda..." oninput="sF('proje','sektor',this.value)"></div></div>
+  <div class="fg"><label>Hedef kitle</label><input type="text" value="${ec(d.hedefKitle)}" placeholder="Örn: 25–45 yaş arası şirket sahipleri" oninput="sF('proje','hedefKitle',this.value)"></div>
+  <div class="r2"><div class="fg"><label>Bütçe</label><select onchange="sF('proje','butce',this.value)">${[['','Seçiniz...'],['0-500','$0 – $500'],['500-1500','$500 – $1.500'],['1500-5000','$1.500 – $5.000'],['5000+','$5.000+'],['belirtmek-istemiyorum','Belirtmek istemiyorum']].map(([v,l])=>`<option value="${v}"${d.butce===v?' selected':''}>${l}</option>`).join('')}</select></div><div class="fg"><label>Teslim tarihi</label><input type="date" value="${ec(d.deadline)}" oninput="sF('proje','deadline',this.value)"></div></div>
+  <div class="fg"><label>Proje açıklaması</label><textarea placeholder="Projeyle ilgili genel fikrinizi anlatın..." oninput="sF('proje','aciklama',this.value)">${ec(d.aciklama)}</textarea></div>
+  <div id="si" class="si">✓ Kaydedildi</div><div style="display:flex;justify-content:flex-end;margin-top:10px">${nxBtn('proje')}</div></div>`;
+}
+
+function rMk(){
+  const d=D.marka,F=[['sans','Sans-serif — modern'],['serif','Serif — klasik'],['display','Display — gösterişli'],['mono','Monospace — teknik']];
+  const lb=d.logo?`<div class="fp"><img src="${d.logo}" alt=""><div class="fpt">${ec(d.logoName)}</div><button class="btn-fc" onclick="clrLogo()">✕</button></div>`:`<div class="ua" onclick="document.getElementById('logo-inp').click()"><input type="file" id="logo-inp" accept="image/*" onchange="hLogo(this)"><div class="ua-icon">↑</div><p class="ua-text">Logo yükleyin (PNG / JPG / SVG)</p></div>`;
+  return`<div class="card"><h2 class="card-title">Marka kimliği</h2><p class="card-desc">Logo, renkler ve tipografi tercihlerinizi paylaşın.</p>
+  <div class="fg"><label>Logo</label>${lb}</div>
+  <div class="fg" style="margin-top:13px"><label>Marka renkleri (en fazla 5)</label><div class="cr">${d.renkler.map((c,i)=>`<div class="cpw"><input type="color" value="${c}" oninput="updClr(${i},this.value)"><span class="cl" id="cl-${i}">${c}</span></div>`).join('')}${d.renkler.length<5?`<button class="btn-addcolor" onclick="addClr()">+</button>`:''}</div></div>
+  <div class="fg" style="margin-top:13px"><label>Font tercihi</label><div class="tg" style="grid-template-columns:1fr 1fr">${F.map(([v,l])=>`<button class="tb${d.fontTercihi===v?' sel':''}" onclick="sR('marka','fontTercihi','${v}')">${l}</button>`).join('')}</div></div>
+  <div class="fg" style="margin-top:13px"><label>Marka notları</label><textarea placeholder="Markanızın tonu, değerleri ve hissi hakkında bilgi verin..." oninput="sF('marka','markaNot',this.value)">${ec(d.markaNot||'')}</textarea></div>
+  <div id="si" class="si">✓ Kaydedildi</div><div style="display:flex;justify-content:flex-end;margin-top:10px">${nxBtn('marka')}</div></div>`;
+}
+
+function secHdr(title,desc){return`<div style="background:var(--bg3);border-radius:var(--radius);padding:10px 14px;margin:18px 0 14px"><p style="font-size:13px;font-weight:700;color:var(--text)">${title}</p>${desc?`<p style="font-size:12px;color:var(--text2);margin-top:2px">${desc}</p>`:''}</div>`;}
+function rMt(){
+  const d=D.metinler;
+  const refs=d.referanslar||[];
+  const sss=d.sss||[];
+  return`<div class="card"><h2 class="card-title">İçerik metinleri</h2><p class="card-desc">Web sitenizde kullanılacak tüm metinleri bu bölümde toplayın. Boş bıraktığınız alanlar atlanır.</p>
+
+  ${secHdr('🏠 Ana Sayfa','Ziyaretçinin ilk gördüğü alan — dikkat çekici ve net olmalı.')}
+  <div class="fg"><label>Ana başlık / Slogan</label><input type="text" value="${ec(d.slogan)}" placeholder="Örn: İşinizi bir üst seviyeye taşıyoruz" oninput="sF('metinler','slogan',this.value)"></div>
+  <div class="fg"><label>Alt başlık / Açıklama cümlesi</label><input type="text" value="${ec(d.altBaslik||'')}" placeholder="Örn: 10 yıllık deneyimle 500'den fazla projeyi hayata geçirdik." oninput="sF('metinler','altBaslik',this.value)"></div>
+  <div class="fg"><label>Çağrı Butonu (CTA) metni</label><input type="text" value="${ec(d.ctaButon||'')}" placeholder="Örn: Hemen Teklif Al, Ücretsiz Dene, İletişime Geç" oninput="sF('metinler','ctaButon',this.value)"></div>
+
+  ${secHdr('🏢 Firma Tanıtımı','Markanızın hikayesini ve değerlerini anlatın.')}
+  <div class="fg"><label>Hakkımızda</label><textarea style="min-height:100px" placeholder="Firmanızı, kuruluş hikayenizi ve misyonunuzu tanıtın..." oninput="sF('metinler','hakkimizda',this.value)">${ec(d.hakkimizda)}</textarea></div>
+  <div class="r2">
+    <div class="fg"><label>Vizyon</label><textarea style="min-height:70px" placeholder="Geleceğe dair hedefleriniz ve idealleriniz..." oninput="sF('metinler','vizyon',this.value)">${ec(d.vizyon||'')}</textarea></div>
+    <div class="fg"><label>Misyon</label><textarea style="min-height:70px" placeholder="Bugün ne için var olduğunuz, nasıl değer ürettiğiniz..." oninput="sF('metinler','misyon',this.value)">${ec(d.misyon||'')}</textarea></div>
+  </div>
+  <div class="fg"><label>Değerlerimiz</label><textarea placeholder="Örn: Şeffaflık, müşteri odaklılık, yenilikçilik — virgülle veya madde madde yazın." oninput="sF('metinler','degerlerimiz',this.value)">${ec(d.degerlerimiz||'')}</textarea></div>
+
+  ${secHdr('⚙️ Hizmetler & Avantajlar','Sunduklarınızı ve farkınızı net bir şekilde ifade edin.')}
+  <div class="fg"><label>Hizmetler / Ürünler kısa özeti</label><textarea placeholder="Ana hizmet ve ürünlerinizi listeleyin..." oninput="sF('metinler','hizmetler',this.value)">${ec(d.hizmetler)}</textarea></div>
+  <div class="fg"><label>Neden Biz? / Avantajlarımız</label><textarea placeholder="Sizi rakiplerden ayıran özellikler, güçlü yönler, garantiler..." oninput="sF('metinler','nedenBiz',this.value)">${ec(d.nedenBiz||'')}</textarea></div>
+
+  ${secHdr('💬 Müşteri Referansları','Mevcut müşteri yorumlarınız varsa ekleyin.')}
+  ${refs.map((r,i)=>`<div class="li"><div class="lih"><span class="lin">Referans #${i+1}</span><button class="btn-rm" onclick="rmRef(${i})">Sil</button></div><div class="r2"><div class="fg"><label>Müşteri adı</label><input type="text" value="${ec(r.ad)}" placeholder="Adı Soyadı" oninput="updRef(${i},'ad',this.value)"></div><div class="fg"><label>Unvan / Firma</label><input type="text" value="${ec(r.unvan||'')}" placeholder="CEO, Acme Ltd." oninput="updRef(${i},'unvan',this.value)"></div></div><div class="fg"><label>Yorum</label><textarea placeholder="Müşteri yorumu..." oninput="updRef(${i},'yorum',this.value)">${ec(r.yorum||'')}</textarea></div></div>`).join('')}
+  <button class="btn-add" onclick="addRef()">+ Referans Ekle</button>
+
+  ${secHdr('❓ Sık Sorulan Sorular (SSS)','Ziyaretçilerin aklındaki soruları önceden cevaplayın.')}
+  ${sss.map((s,i)=>`<div class="li"><div class="lih"><span class="lin">Soru #${i+1}</span><button class="btn-rm" onclick="rmSSS(${i})">Sil</button></div><div class="fg"><label>Soru</label><input type="text" value="${ec(s.soru)}" placeholder="Örn: Teslimat süresi ne kadar?" oninput="updSSS(${i},'soru',this.value)"></div><div class="fg"><label>Cevap</label><textarea placeholder="Cevap..." oninput="updSSS(${i},'cevap',this.value)">${ec(s.cevap||'')}</textarea></div></div>`).join('')}
+  <button class="btn-add" onclick="addSSS()">+ Soru & Cevap Ekle</button>
+
+  ${secHdr('👥 Ekip','Çalışanlarınızı veya kurucuları tanıtmak ister misiniz?')}
+  <div class="fg"><label>Ekip / Kadro hakkında</label><textarea placeholder="Ekibinizi tanıtın; kurucu isimleri, uzmanlık alanları, deneyimler..." oninput="sF('metinler','ekip',this.value)">${ec(d.ekip||'')}</textarea></div>
+
+  ${secHdr('📋 Footer & Genel','Sitenin alt kısmında görüntülenecek metinler.')}
+  <div class="fg"><label>Footer kısa metni</label><input type="text" value="${ec(d.footerMetin||'')}" placeholder="Örn: Kaliteli hizmet, güvenilir çözümler." oninput="sF('metinler','footerMetin',this.value)"></div>
+  <div class="fg"><label>Telif hakkı / Copyright</label><input type="text" value="${ec(d.telif||'')}" placeholder="Örn: © 2025 Acme Teknoloji. Tüm hakları saklıdır." oninput="sF('metinler','telif',this.value)"></div>
+
+  ${secHdr('📞 İletişim Bilgileri','')}
+  <div class="r2"><div class="fg"><label>Telefon</label><input type="text" value="${ec(d.telefon)}" placeholder="+90 555 000 00 00" oninput="sF('metinler','telefon',this.value)"></div><div class="fg"><label>E-posta</label><input type="email" value="${ec(d.email)}" placeholder="info@sirket.com" oninput="sF('metinler','email',this.value)"></div></div>
+  <div class="fg"><label>Adres</label><input type="text" value="${ec(d.adres)}" placeholder="Tam adres..." oninput="sF('metinler','adres',this.value)"></div>
+  <div class="fg"><label>Çalışma saatleri</label><input type="text" value="${ec(d.calismaS||'')}" placeholder="Örn: Hafta içi 09:00–18:00, Cumartesi 10:00–14:00" oninput="sF('metinler','calismaS',this.value)"></div>
+
+  <div id="si" class="si">✓ Kaydedildi</div><div style="display:flex;justify-content:flex-end;margin-top:12px">${nxBtn('metinler')}</div></div>`;
+}
+
+function rUr(){
+  const items=D.urunler;
+  const body=items.length===0?`<p style="font-size:13px;color:var(--text3);text-align:center;padding:16px 0">Henüz ürün/hizmet eklenmedi.</p>`:items.map((u,i)=>`<div class="li"><div class="lih"><span class="lin">Ürün / Hizmet #${i+1}</span><button class="btn-rm" onclick="rmUr(${i})">Sil</button></div><div class="r2"><div class="fg"><label>Ad</label><input type="text" value="${ec(u.ad)}" placeholder="Ürün adı" oninput="updUr(${i},'ad',this.value)"></div><div class="fg"><label>Fiyat</label><input type="text" value="${ec(u.fiyat||'')}" placeholder="299₺" oninput="updUr(${i},'fiyat',this.value)"></div></div><div class="fg"><label>Açıklama</label><textarea placeholder="Kısa açıklama..." oninput="updUr(${i},'aciklama',this.value)">${ec(u.aciklama)}</textarea></div><div class="fg"><label>Görsel</label>${u.gorsel?`<div class="fp"><img src="${u.gorsel}" alt=""><div class="fpt">${ec(u.gorselAd||'Görsel')}</div><button class="btn-fc" onclick="clrUrG(${i})">✕</button></div>`:`<div class="ua" style="padding:12px" onclick="document.getElementById('ug${i}').click()"><input type="file" id="ug${i}" accept="image/*" onchange="hUrG(this,${i})"><p class="ua-text">Görsel ekle</p></div>`}</div></div>`).join('');
+  return`<div class="card"><h2 class="card-title">Ürünler & hizmetler</h2><p class="card-desc">Web sitenizde gösterilecek ürün ve hizmetleri ekleyin.</p>${body}<button class="btn-add" style="margin-top:5px" onclick="addUr()">+ Ürün / Hizmet Ekle</button><div id="si" class="si">✓ Kaydedildi</div><div style="display:flex;justify-content:flex-end;margin-top:10px">${nxBtn('urunler')}</div></div>`;
+}
+
+function rMd(){
+  const grs=D.medya.gorseller||[],vids=D.medya.videolar||[];
+  return`<div class="card"><h2 class="card-title">Medya dosyaları</h2><p class="card-desc">Ek görseller ve video bağlantıları ekleyin.</p>
+  <div class="fg"><label>Ek görseller (en fazla 10)</label>${grs.length?`<div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:9px">${grs.map((g,i)=>`<div style="position:relative"><img src="${g.data}" style="width:70px;height:70px;object-fit:cover;border-radius:8px;border:1.5px solid var(--border)"><button onclick="rmGrs(${i})" style="position:absolute;top:-5px;right:-5px;width:19px;height:19px;border-radius:50%;border:none;background:#E24B4A;color:white;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;padding:0;font-family:inherit">✕</button></div>`).join('')}</div>`:''} ${grs.length<10?`<div class="ua" onclick="document.getElementById('gi').click()"><input type="file" id="gi" accept="image/*" multiple onchange="hGrs(this)"><div class="ua-icon">↑</div><p class="ua-text">Görsel yükleyin (çoklu seçim desteklenir)</p></div>`:`<p style="font-size:13px;color:var(--text3)">Maks. 10 görsel yüklendi.</p>`}</div>
+  <div class="fg div-line"><p style="font-size:14px;font-weight:700;margin-bottom:12px">Video bağlantıları</p>${vids.map((v,i)=>`<div style="display:flex;gap:7px;margin-bottom:7px;align-items:center"><input type="url" value="${ec(v.url)}" placeholder="YouTube / Vimeo URL..." oninput="updVid(${i},'url',this.value)" style="flex:2"><input type="text" value="${ec(v.baslik||'')}" placeholder="Açıklama" oninput="updVid(${i},'baslik',this.value)" style="flex:1"><button class="btn-rm" onclick="rmVid(${i})">Sil</button></div>`).join('')}<button class="btn-add" onclick="addVid()">+ Video Bağlantısı Ekle</button></div>
+  <div id="si" class="si">✓ Kaydedildi</div><div style="display:flex;justify-content:flex-end;margin-top:10px">${nxBtn('medya')}</div></div>`;
+}
+
+function rRk(){
+  const items=D.rakipler;
+  const body=items.length===0?`<p style="font-size:13px;color:var(--text3);text-align:center;padding:16px 0">Henüz rakip site eklenmedi.</p>`:items.map((r,i)=>`<div style="display:flex;gap:7px;margin-bottom:7px;align-items:center"><input type="url" value="${ec(r.url)}" placeholder="https://ornek-site.com" oninput="updRk(${i},'url',this.value)" style="flex:2"><input type="text" value="${ec(r.not||'')}" placeholder="Not (opsiyonel)" oninput="updRk(${i},'not',this.value)" style="flex:2"><button class="btn-rm" onclick="rmRk(${i})">Sil</button></div>`).join('');
+  return`<div class="card"><h2 class="card-title">Rakip siteler</h2><p class="card-desc">Beğendiğiniz ya da rekabet ettiğiniz siteleri ekleyin. Tasarım ilhamı için kullanılır.</p>${body}<button class="btn-add" onclick="addRk()">+ Site Ekle</button><div id="si" class="si">✓ Kaydedildi</div><div style="display:flex;justify-content:flex-end;margin-top:10px">${nxBtn('rakipler')}</div></div>`;
+}
+
+function rTk(){
+  const d=D.teknik;
+  return`<div class="card"><h2 class="card-title">Teknik detaylar</h2><p class="card-desc">Domain, hosting ve sosyal medya bilgileri.</p>
+  <div class="r2"><div class="fg"><label>Domain durumu *</label><select onchange="sF('teknik','domainDurumu',this.value)">${[['','Seçiniz...'],['mevcut','Mevcut domainim var'],['satin-alinacak','Satın alınacak'],['tavsiye','Tavsiye bekliyorum']].map(([v,l])=>`<option value="${v}"${d.domainDurumu===v?' selected':''}>${l}</option>`).join('')}</select></div><div class="fg"><label>Domain adı</label><input type="text" value="${ec(d.domainAdi)}" placeholder="ornek.com" oninput="sF('teknik','domainAdi',this.value)"></div></div>
+  <div class="fg"><label>Hosting / Platform</label><select onchange="sF('teknik','hostingTercihi',this.value)">${[['','Seçiniz...'],['mevcut','Mevcut hostingim var'],['tavsiye','Tavsiye bekliyorum'],['wordpress','WordPress'],['custom','Özel (React/Vue vb.)'],['webflow','Webflow / Wix / Squarespace']].map(([v,l])=>`<option value="${v}"${d.hostingTercihi===v?' selected':''}>${l}</option>`).join('')}</select></div>
+  <div class="fg"><label class="ckr" style="text-transform:none;letter-spacing:0"><input type="checkbox" ${d.ssl?'checked':''} onchange="sF('teknik','ssl',this.checked)"> SSL sertifikası gerekli (HTTPS)</label></div>
+  <div class="div-line"><p style="font-size:14px;font-weight:700;margin-bottom:12px">Sosyal medya hesapları</p><div class="r2">${[['instagram','Instagram'],['facebook','Facebook'],['linkedin','LinkedIn'],['twitter','Twitter / X'],['youtube','YouTube']].map(([k,l])=>`<div class="fg"><label>${l}</label><input type="url" value="${ec(d[k]||'')}" placeholder="https://..." oninput="sF('teknik','${k}',this.value)"></div>`).join('')}</div></div>
+  <div class="fg" style="margin-top:10px"><label>Ek notlar</label><textarea placeholder="Başka isteğiniz varsa yazın..." oninput="sF('teknik','ekNotlar',this.value)">${ec(d.ekNotlar)}</textarea></div>
+  <div id="si" class="si">✓ Kaydedildi</div><div style="display:flex;justify-content:flex-end;margin-top:10px">${nxBtn('teknik')}</div></div>`;
+}
+
+/* ── ÖZET ───────────────────────────────── */
+function rOz(){
+  const p=pct(),hasRev=FS.some(s=>SS[s]==='revision'),isSub=OS==='submitted';
+  const si={approved:'✓',revision:'⚠',pending:'○'};
+  const sc={approved:'var(--teal-dark)',revision:'#6B3A00',pending:'var(--text3)'};
+  const sb={approved:'var(--teal-light)',revision:'var(--amber-light)',pending:'var(--bg3)'};
+  const st={approved:'Onaylandı',revision:'Revizyon İstendi',pending:'Bekliyor'};
+  const rows=secs.filter(s=>s.id!=='ozet').map(s=>{
+    const ss=SS[s.id]||'pending';
+    return`<div class="oz-row${ss==='approved'?' locked-row':''}" style="background:${sb[ss]};border:1.5px solid ${ss==='approved'?'var(--teal)':ss==='revision'?'var(--amber)':'var(--border)'}" ${ss!=='approved'?`onclick="gt('${s.id}')"`:''}><span style="font-size:16px;color:${sc[ss]};width:20px;text-align:center">${si[ss]}</span><span style="font-size:14px;flex:1;font-weight:${ss==='revision'?'600':'400'}">${s.lb}</span><span style="font-size:12px;font-weight:600;color:${sc[ss]}">${st[ss]}</span>${ss!=='approved'?`<span style="color:var(--text3)">→</span>`:''}</div>`;
+  }).join('');
+  const submitBlock=isSub&&!hasRev?`<div class="sub-banner"><span style="font-size:22px">✓</span><div><p style="font-size:14px;font-weight:700;color:var(--teal-dark)">Form gönderildi, inceleniyor.</p><p style="font-size:13px;color:var(--teal-dark);margin-top:3px">Tasarımcı değerlendirmesinin ardından haberdar edileceksiniz.</p></div></div>`:`<button class="btn-submit" onclick="doSub()">${hasRev?'Revizyonları Gönder — Tasarımcıya İlet':'Formu Gönder — Tasarımcıya İlet'}</button>`;
+  return`<div class="card"><h2 class="card-title">Özet & Gönder</h2><p class="card-desc">Bölümlerin durumu. Eksik veya revizyon istenen bölümlere tıklayarak düzeltebilirsiniz.</p>
+  <div style="background:var(--bg3);border-radius:var(--radius);padding:11px 15px;margin-bottom:15px;display:flex;align-items:center;gap:14px"><div style="flex:1"><p style="font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Genel tamamlanma</p><div style="height:6px;background:var(--border);border-radius:3px"><div style="height:100%;width:${p}%;background:var(--teal);border-radius:3px;transition:width .3s"></div></div></div><span style="font-size:20px;font-weight:800;color:var(--teal-dark)">${p}%</span></div>
+  ${rows}${submitBlock}
+  <button class="btn-reset" onclick="resetAll()">Formu Sıfırla</button></div>`;
+}
+
+/* ── SUBMIT ─────────────────────────────── */
+async function doSub(){
+  // Reset revision→pending after client resubmits
+  FS.forEach(s=>{if(SS[s]==='revision')SS[s]='pending';});
+  OS='submitted';
+  try{
+    let en;
+    try{const r=await window.storage.get('sub:'+sid,true);en=r?.value?JSON.parse(r.value):mkEntry();}catch(x){en=mkEntry();}
+    en.data=D;en.status='submitted';en.lastUpdated=Date.now();en.progress=pct();
+    if(!en.sectionStatus)en.sectionStatus={};
+    FS.forEach(s=>{if(en.sectionStatus[s]==='revision')en.sectionStatus[s]='pending';});
+    SS={...SS,...Object.fromEntries(FS.map(s=>[s,en.sectionStatus[s]||SS[s]]))};
+    if(!en.adminNotes)en.adminNotes={};
+    await window.storage.set('sub:'+sid,JSON.stringify(en),true);
+  }catch(x){}
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify({data:D,SS,AN,OS}));}catch(x){}
+  rSB();rC();
+}
+
+/* ── FILE HANDLERS ──────────────────────── */
+function hLogo(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{D.marka.logo=ev.target.result;D.marka.logoName=f.name;sv();rC();};r.readAsDataURL(f);}
+function clrLogo(){D.marka.logo=null;D.marka.logoName='';sv();rC();}
+function updClr(i,v){D.marka.renkler[i]=v;sv();const l=document.getElementById('cl-'+i);if(l)l.textContent=v;}
+function addClr(){if(D.marka.renkler.length>=5)return;D.marka.renkler.push('#888888');sv();rC();}
+function addUr(){D.urunler.push({ad:'',aciklama:'',fiyat:'',gorsel:null,gorselAd:''});sv();rC();}
+function rmUr(i){D.urunler.splice(i,1);sv();rC();}
+function updUr(i,k,v){D.urunler[i][k]=v;sv();}
+function hUrG(inp,i){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{D.urunler[i].gorsel=ev.target.result;D.urunler[i].gorselAd=f.name;sv();rC();};r.readAsDataURL(f);}
+function clrUrG(i){D.urunler[i].gorsel=null;D.urunler[i].gorselAd='';sv();rC();}
+function hGrs(inp){const files=Array.from(inp.files),rem=10-(D.medya.gorseller||[]).length,tl=files.slice(0,rem);let done=0;if(!tl.length)return;tl.forEach(f=>{const r=new FileReader();r.onload=ev=>{D.medya.gorseller.push({name:f.name,data:ev.target.result});done++;if(done===tl.length){sv();rC();}};r.readAsDataURL(f);});}
+function rmGrs(i){D.medya.gorseller.splice(i,1);sv();rC();}
+function addVid(){D.medya.videolar.push({url:'',baslik:''});sv();rC();}
+function rmVid(i){D.medya.videolar.splice(i,1);sv();rC();}
+function updVid(i,k,v){D.medya.videolar[i][k]=v;sv();}
+function addRk(){D.rakipler.push({url:'',not:''});sv();rC();}
+function rmRk(i){D.rakipler.splice(i,1);sv();rC();}
+function updRk(i,k,v){D.rakipler[i][k]=v;sv();}
+function doEx(){const s=JSON.stringify(D,null,2),b=new Blob([s],{type:'application/json'}),url=URL.createObjectURL(b),a=document.createElement('a');a.href=url;a.download=(D.proje.firmaAdi||'musteri').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'')+'-brief.json';a.click();URL.revokeObjectURL(url);}
+function resetAll(){if(!confirm('Tüm veriler silinecek. Emin misiniz?'))return;D=fr();SS=Object.fromEntries(FS.map(s=>[s,'pending']));AN=Object.fromEntries(FS.map(s=>[s,'']));OS='draft';try{localStorage.removeItem(STORAGE_KEY);}catch(x){}rSB();rC();}
+
+/* ── DESIGNER LOGIN ─────────────────────── */
+function sDL(){
+  document.getElementById('ca').innerHTML=`<div class="card"><h2 class="card-title">Tasarımcı girişi</h2><p class="card-desc">Müşteri yanıtlarını incelemek ve onaylamak için giriş yapın.</p><div class="login-wrap"><div class="fg"><label>Erişim kodu</label><input type="password" id="dc" placeholder="••••••••" onkeydown="if(event.key==='Enter')chkDC()" style="font-size:18px;letter-spacing:.15em"></div><div style="display:flex;gap:9px;margin-top:14px"><button class="btn-next" style="flex:1;justify-content:center" onclick="chkDC()">Giriş Yap</button><button class="btn-outline" style="width:auto;padding:9px 16px" onclick="rC()">İptal</button></div><p id="de" class="emsg"></p></div></div>`;
+  setTimeout(()=>{const i=document.getElementById('dc');if(i)i.focus();},50);
+}
+function chkDC(){const i=document.getElementById('dc'),er=document.getElementById('de');if(!i)return;if(i.value===DC){mode='designer';const el=document.getElementById('mob-sec');if(el)el.textContent='Tasarımcı Paneli';rSB();rD();stAR();}else{if(er)er.textContent='Hatalı kod. Tekrar deneyin.';i.value='';i.focus();}}
+function exD(){mode='form';stpAR();closeNav();rSB();rC();updMobSec();}
+function stAR(){clearInterval(autoRT);autoRT=setInterval(()=>{if(mode==='designer')rD();},15000);}
+function stpAR(){clearInterval(autoRT);autoRT=null;}
+
+/* ── DASHBOARD ──────────────────────────── */
+async function rD(){
+  const ca=document.getElementById('ca');
+  let subs=[];
+  try{const lr=await window.storage.list('sub:',true);for(const k of (lr?.keys||[])){try{const r=await window.storage.get(k,true);if(r?.value)subs.push(JSON.parse(r.value));}catch(x){}}subs.sort((a,b)=>b.lastUpdated-a.lastUpdated);}catch(x){}
+  if(!subs.length){ca.innerHTML=`<div class="card"><h2 class="card-title">Müşteri yanıtları</h2><p class="card-desc">Henüz yanıt gelmedi. Panelin bağlantısını müşterilerinizle paylaşın.</p><div style="text-align:center;padding:50px 20px;color:var(--text3)"><div style="font-size:48px;margin-bottom:12px">◯</div><p>Yanıt bekleniyor...</p></div></div>`;return;}
+  const ctMap={draft:'Taslak',submitted:'Gönderildi',revision_needed:'Revizyon İstendi',completed:'Tamamlandı'};
+  const cbMap={draft:'b-pend',submitted:'b-info',revision_needed:'b-rev',completed:'b-app'};
+  const ssIco={approved:'✓',revision:'⚠',pending:'—'};
+  const ssBdg={approved:'b-app',revision:'b-rev',pending:'b-pend'};
+  const ssTxt={approved:'Onaylandı',revision:'Revizyon',pending:'Bekliyor'};
+  const sc=subs.filter(s=>s.status==='submitted').length,rv=subs.filter(s=>s.status==='revision_needed').length,cp=subs.filter(s=>s.status==='completed').length;
+  const cards=subs.map(s=>{
+    const isExp=expanded.has(s.sessionId),d=s.data||{},ss=s.sectionStatus||{},an=s.adminNotes||{};
+    const appC=FS.filter(id=>ss[id]==='approved').length;
+    const det=isExp?`<div class="subdet"><p style="font-size:13px;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--text2)">Bölüm Onaylama</p>${FS.map(fid=>{const st=ss[fid]||'pending',note=an[fid]||'';return`<div class="sec-rev-row"><div class="sec-rev-hdr"><span class="sec-rev-name">${SLS[fid]}</span><span class="badge ${ssBdg[st]}">${ssIco[st]} ${ssTxt[st]}</span></div><div class="sec-rev-inputs"><input type="text" id="an-${fid}-${s.sessionId}" value="${ec(note)}" placeholder="Revizyon notu... (opsiyonel)"><button class="btn-app-sm" onclick="aApp('${s.sessionId}','${fid}')">✓ Onayla</button><button class="btn-rev-sm" onclick="aRev('${s.sessionId}','${fid}')">⚠ Revizyon İste</button></div></div>`;}).join('')}<div style="margin-top:10px"><button class="btn-dl" style="width:100%;padding:10px" onclick="aAppAll('${s.sessionId}')">✓ Tüm Bölümleri Onayla</button></div></div>`:'';
+    return`<div class="subcard"><div class="subhdr"><span class="subfirma">${ec(s.firmaAdi||'İsimsiz')}</span><span class="badge ${cbMap[s.status]||'b-pend'}">${ctMap[s.status]||s.status}</span><span class="subts">${fd(s.lastUpdated)}</span></div><div class="substats"><div class="statbox"><div class="statlbl">Site türü</div><div class="statval">${STLS[s.siteType]||s.siteType||'—'}</div></div><div class="statbox"><div class="statlbl">Tamamlanma</div><div class="statval">${s.progress||0}%</div></div><div class="statbox"><div class="statlbl">Onaylanan</div><div class="statval">${appC} / ${FS.length}</div></div></div>${det}<div class="subftr"><button class="btn-dl" onclick="dlSub('${s.sessionId}')">↓ JSON</button><button class="btn-det" onclick="togDet('${s.sessionId}')">${isExp?'Kapat':'Bölümleri İncele'}</button><button class="btn-del" onclick="delSub('${s.sessionId}')">Sil</button></div></div>`;
+  }).join('');
+  ca.innerHTML=`<div class="card"><div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:16px"><div style="flex:1"><h2 class="card-title">Müşteri yanıtları</h2><p style="font-size:13px;color:var(--text3);margin-top:3px">${subs.length} yanıt &mdash; ${sc} gönderildi · ${rv} revizyon · ${cp} tamamlandı &mdash; 15 sn'de bir yenilenir</p></div><button class="btn-dl" onclick="dlAll()">↓ Tümünü İndir</button></div>${cards}</div>`;
+}
+
+function togDet(sid2){if(expanded.has(sid2))expanded.delete(sid2);else expanded.add(sid2);rD();}
+
+async function aApp(sid2,fid){
+  try{const r=await window.storage.get('sub:'+sid2,true);if(!r?.value)return;const en=JSON.parse(r.value);if(!en.sectionStatus)en.sectionStatus={};en.sectionStatus[fid]='approved';if(!en.adminNotes)en.adminNotes={};en.adminNotes[fid]='';if(FS.every(s=>en.sectionStatus[s]==='approved'))en.status='completed';await window.storage.set('sub:'+sid2,JSON.stringify(en),true);rD();}catch(x){}
+}
+
+async function aRev(sid2,fid){
+  try{const r=await window.storage.get('sub:'+sid2,true);if(!r?.value)return;const en=JSON.parse(r.value);if(!en.sectionStatus)en.sectionStatus={};en.sectionStatus[fid]='revision';if(!en.adminNotes)en.adminNotes={};const ni=document.getElementById('an-'+fid+'-'+sid2);en.adminNotes[fid]=ni?ni.value:'';en.status='revision_needed';await window.storage.set('sub:'+sid2,JSON.stringify(en),true);rD();}catch(x){}
+}
+
+async function aAppAll(sid2){
+  try{const r=await window.storage.get('sub:'+sid2,true);if(!r?.value)return;const en=JSON.parse(r.value);en.sectionStatus=Object.fromEntries(FS.map(s=>[s,'approved']));en.adminNotes=Object.fromEntries(FS.map(s=>[s,'']));en.status='completed';await window.storage.set('sub:'+sid2,JSON.stringify(en),true);rD();}catch(x){}
+}
+
+async function dlSub(sid2){try{const r=await window.storage.get('sub:'+sid2,true);if(!r?.value)return;const en=JSON.parse(r.value);const s=JSON.stringify(en.data,null,2),b=new Blob([s],{type:'application/json'}),url=URL.createObjectURL(b),a=document.createElement('a');a.href=url;a.download=(en.firmaAdi||'musteri').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'')+'-brief.json';a.click();URL.revokeObjectURL(url);}catch(x){}}
+
+async function dlAll(){try{const lr=await window.storage.list('sub:',true);const all=[];for(const k of (lr?.keys||[])){try{const r=await window.storage.get(k,true);if(r?.value)all.push(JSON.parse(r.value));}catch(x){}}const s=JSON.stringify(all,null,2),b=new Blob([s],{type:'application/json'}),url=URL.createObjectURL(b),a=document.createElement('a');a.href=url;a.download='tum-yanitlar.json';a.click();URL.revokeObjectURL(url);}catch(x){}}
+
+async function delSub(sid2){if(!confirm('Bu yanıt silinsin mi?'))return;try{await window.storage.delete('sub:'+sid2,true);}catch(x){}expanded.delete(sid2);rD();}
+
+function addRef(){D.metinler.referanslar.push({ad:'',unvan:'',yorum:''});sv();rC();}
+function rmRef(i){D.metinler.referanslar.splice(i,1);sv();rC();}
+function updRef(i,k,v){D.metinler.referanslar[i][k]=v;sv();}
+function addSSS(){D.metinler.sss.push({soru:'',cevap:''});sv();rC();}
+function rmSSS(i){D.metinler.sss.splice(i,1);sv();rC();}
+function updSSS(i,k,v){D.metinler.sss[i][k]=v;sv();}
+
+/* ── START ──────────────────────────────── */
+init();
+</script>
+</body>
+</html>
