@@ -139,7 +139,32 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
 .emsg{font-size:13px;color:var(--red);min-height:18px;margin-top:7px}
 /* LOGIN */
 .login-wrap{max-width:300px;margin:30px auto}
-/* MOBILE HEADER */
+/* ANALYZE CARD */
+.az-card{border:2px dashed var(--teal);border-radius:var(--radius-lg);background:var(--teal-light);padding:18px 20px;margin-bottom:18px}
+.az-hdr{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
+.az-icon{font-size:26px;line-height:1;flex-shrink:0}
+.az-hdr-title{font-size:15px;font-weight:700;color:var(--teal-dark)}
+.az-hdr-desc{font-size:13px;color:var(--text2);margin-top:3px}
+.az-row{display:flex;gap:8px;align-items:stretch}
+.az-row input{flex:1;border-color:var(--teal)}
+.btn-analyze{padding:9px 16px;font-size:13px;font-weight:700;border:none;border-radius:var(--radius);cursor:pointer;background:var(--teal);color:#fff;font-family:inherit;white-space:nowrap;transition:background .15s}
+.btn-analyze:hover{background:var(--teal-dark)}
+.btn-analyze:disabled{opacity:.6;cursor:wait}
+.az-result{margin-top:12px}
+.az-preview{background:var(--bg2);border:1.5px solid var(--teal);border-radius:var(--radius);padding:14px 16px}
+.az-preview-title{font-size:13px;font-weight:700;color:var(--teal-dark);margin-bottom:10px}
+.az-preview-row{display:flex;gap:8px;padding:3px 0;font-size:12px;border-bottom:1px solid var(--bg3)}
+.az-preview-row:last-of-type{border-bottom:none}
+.az-pk{color:var(--text2);min-width:110px;flex-shrink:0;font-weight:500}
+.az-pv{color:var(--text);flex:1;word-break:break-word}
+.az-apply{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;font-size:14px;font-weight:700;border:none;border-radius:var(--radius);cursor:pointer;background:var(--teal);color:#fff;font-family:inherit;transition:background .15s;margin-top:12px}
+.az-apply:hover{background:var(--teal-dark)}
+.az-err{font-size:13px;color:var(--red);background:var(--red-light);border:1px solid #F09595;border-radius:var(--radius);padding:10px 13px}
+.az-loading{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text2);padding:4px 0}
+.spinner{width:18px;height:18px;border:2.5px solid var(--border);border-top-color:var(--teal);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* TOAST */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--teal-dark);color:#fff;padding:11px 22px;border-radius:30px;font-size:14px;font-weight:700;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.2)}
 .mob-hdr{display:none;align-items:center;justify-content:space-between;padding:13px 16px;background:var(--bg2);border-bottom:1.5px solid var(--border);position:sticky;top:0;z-index:90}
 .mob-hdr-brand{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em}
 .mob-hdr-sec{font-size:15px;font-weight:700;color:var(--text);margin-top:1px}
@@ -178,6 +203,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
 </style>
 </head>
 <body>
+<div id="toast"></div>
 <!-- Mobile header bar -->
 <div class="mob-hdr" id="mob-hdr">
   <div>
@@ -219,7 +245,7 @@ const secs=[{id:'proje',lb:'Proje Bilgileri'},{id:'marka',lb:'Marka Kimliği'},{
 
 /* ── STATE ──────────────────────────────── */
 let mode='form', curSec='proje', expanded=new Set(), autoRT=null;
-const fr=()=>({proje:{siteType:'',firmaAdi:'',sektor:'',hedefKitle:'',butce:'',deadline:'',aciklama:''},marka:{logo:null,logoName:'',renkler:['#1D9E75','#085041'],fontTercihi:'',markaNot:''},metinler:{slogan:'',altBaslik:'',ctaButon:'',hakkimizda:'',vizyon:'',misyon:'',degerlerimiz:'',hizmetler:'',nedenBiz:'',referanslar:[],sss:[],ekip:'',footerMetin:'',telif:'',telefon:'',email:'',adres:'',calismaS:''},urunler:[],medya:{gorseller:[],videolar:[]},rakipler:[],teknik:{domainDurumu:'',domainAdi:'',hostingTercihi:'',ssl:false,instagram:'',facebook:'',linkedin:'',twitter:'',youtube:'',ekNotlar:''}});
+const fr=()=>({proje:{siteType:'',firmaAdi:'',sektor:'',hedefKitle:'',deadline:'',aciklama:''},marka:{logo:null,logoName:'',renkler:['#1D9E75','#085041'],fontTercihi:'',markaNot:''},metinler:{slogan:'',altBaslik:'',ctaButon:'',hakkimizda:'',vizyon:'',misyon:'',degerlerimiz:'',hizmetler:'',nedenBiz:'',referanslar:[],sss:[],ekip:'',footerMetin:'',telif:'',telefon:'',email:'',adres:'',calismaS:''},urunler:[],medya:{gorseller:[],videolar:[]},rakipler:[],teknik:{domainDurumu:'',domainAdi:'',hostingTercihi:'',ssl:false,instagram:'',facebook:'',linkedin:'',twitter:'',youtube:'',ekNotlar:''}});
 let D=fr();
 let SS=Object.fromEntries(FS.map(s=>[s,'pending'])); // sectionStatus
 let AN=Object.fromEntries(FS.map(s=>[s,'']));         // adminNotes
@@ -319,7 +345,7 @@ function nxBtn(cid){
 function sRow(k,v){return v?`<div class="srow"><span class="sk">${k}</span><span class="sv">${ec(String(v))}</span></div>`:''}
 
 function buildSum(id){
-  if(id==='proje'){const p=D.proje;return sRow('Site türü',STLS[p.siteType])+sRow('Firma',p.firmaAdi)+sRow('Sektör',p.sektor)+sRow('Hedef kitle',p.hedefKitle)+sRow('Bütçe',p.butce)+sRow('Teslim tarihi',p.deadline)+(p.aciklama?sRow('Açıklama',p.aciklama.slice(0,80)+(p.aciklama.length>80?'...':'')):'')}
+  if(id==='proje'){const p=D.proje;return sRow('Site türü',STLS[p.siteType])+sRow('Firma',p.firmaAdi)+sRow('Sektör',p.sektor)+sRow('Hedef kitle',p.hedefKitle)+sRow('Teslim tarihi',p.deadline)+(p.aciklama?sRow('Açıklama',p.aciklama.slice(0,80)+(p.aciklama.length>80?'...':'')):'')}
   if(id==='marka'){const m=D.marka;return sRow('Logo',m.logo?'✓ Yüklendi':'—')+`<div class="srow"><span class="sk">Renkler</span><span class="sv">${m.renkler.map(c=>`<span class="cprev" style="background:${c}"></span>${c}`).join('  ')}</span></div>`+sRow('Font tercihi',m.fontTercihi)}
   if(id==='metinler'){const mt=D.metinler;return sRow('Slogan',mt.slogan)+sRow('Alt başlık',mt.altBaslik)+sRow('CTA butonu',mt.ctaButon)+sRow('Vizyon',mt.vizyon?mt.vizyon.slice(0,60)+'...':'')+sRow('Misyon',mt.misyon?mt.misyon.slice(0,60)+'...':'')+sRow('Neden biz',mt.nedenBiz?mt.nedenBiz.slice(0,60)+'...':'')+sRow('Referans sayısı',(mt.referanslar||[]).length+' adet')+sRow('SSS sayısı',(mt.sss||[]).length+' soru')+sRow('Telefon',mt.telefon)+sRow('E-posta',mt.email)+sRow('Adres',mt.adres)+sRow('Çalışma saatleri',mt.calismaS)}
   if(id==='urunler')return D.urunler.length?D.urunler.map((u,i)=>sRow(`Ürün #${i+1}`,u.ad+(u.fiyat?' — '+u.fiyat:''))).join(''):`<p style="font-size:13px;color:var(--text3)">Eklenmedi</p>`;
@@ -352,11 +378,23 @@ function rC(){
 /* ── FORM SECTIONS ──────────────────────── */
 function rPr(){
   const d=D.proje,T=[['kurumsal','Kurumsal / Tanıtım'],['eticaret','E-ticaret'],['portfolio','Portfolio'],['blog','Blog / Haber'],['kisisel','Kişisel'],['restoran','Restoran / Cafe'],['saglik','Sağlık / Klinik'],['egitim','Eğitim']];
-  return`<div class="card"><h2 class="card-title">Proje bilgileri</h2><p class="card-desc">Firmanız ve web sitesi projeniz hakkında temel bilgiler.</p>
+  const savedUrl=function(){try{return localStorage.getItem('wp_eu')||'';}catch(x){return '';}}();
+  const azCard=`<div class="az-card">
+    <div class="az-hdr">
+      <span class="az-icon">🔍</span>
+      <div><p class="az-hdr-title">Mevcut web sitenizi otomatik analiz edin</p><p class="az-hdr-desc">Sitenizin URL'sini girin — içerik, iletişim bilgileri ve sosyal medya hesaplarını otomatik dolduralım. Sonradan her alanı düzenleyebilirsiniz.</p></div>
+    </div>
+    <div class="az-row">
+      <input type="url" id="eurl" placeholder="https://www.siteniz.com" value="${ec(savedUrl)}" onkeydown="if(event.key==='Enter')doAnalyze()">
+      <button class="btn-analyze" id="az-btn" onclick="doAnalyze()">Analiz Et</button>
+    </div>
+    <div class="az-result" id="az-out"></div>
+  </div>`;
+  return`${azCard}<div class="card"><h2 class="card-title">Proje bilgileri</h2><p class="card-desc">Firmanız ve web sitesi projeniz hakkında temel bilgiler.</p>
   <div class="fg"><label>Site türü *</label><div class="tg">${T.map(([v,l])=>`<button class="tb${d.siteType===v?' sel':''}" onclick="sR('proje','siteType','${v}')">${l}</button>`).join('')}</div></div>
   <div class="r2" style="margin-top:12px"><div class="fg"><label>Firma / Marka adı *</label><input type="text" value="${ec(d.firmaAdi)}" placeholder="Örn: Acme Teknoloji" oninput="sF('proje','firmaAdi',this.value)"></div><div class="fg"><label>Sektör</label><input type="text" value="${ec(d.sektor)}" placeholder="Yazılım, Gıda..." oninput="sF('proje','sektor',this.value)"></div></div>
   <div class="fg"><label>Hedef kitle</label><input type="text" value="${ec(d.hedefKitle)}" placeholder="Örn: 25–45 yaş arası şirket sahipleri" oninput="sF('proje','hedefKitle',this.value)"></div>
-  <div class="r2"><div class="fg"><label>Bütçe</label><select onchange="sF('proje','butce',this.value)">${[['','Seçiniz...'],['0-500','$0 – $500'],['500-1500','$500 – $1.500'],['1500-5000','$1.500 – $5.000'],['5000+','$5.000+'],['belirtmek-istemiyorum','Belirtmek istemiyorum']].map(([v,l])=>`<option value="${v}"${d.butce===v?' selected':''}>${l}</option>`).join('')}</select></div><div class="fg"><label>Teslim tarihi</label><input type="date" value="${ec(d.deadline)}" oninput="sF('proje','deadline',this.value)"></div></div>
+  <div class="fg"><label>İstenen teslim tarihi</label><input type="date" value="${ec(d.deadline)}" oninput="sF('proje','deadline',this.value)"></div>
   <div class="fg"><label>Proje açıklaması</label><textarea placeholder="Projeyle ilgili genel fikrinizi anlatın..." oninput="sF('proje','aciklama',this.value)">${ec(d.aciklama)}</textarea></div>
   <div id="si" class="si">✓ Kaydedildi</div><div style="display:flex;justify-content:flex-end;margin-top:10px">${nxBtn('proje')}</div></div>`;
 }
@@ -565,6 +603,177 @@ function updRef(i,k,v){D.metinler.referanslar[i][k]=v;sv();}
 function addSSS(){D.metinler.sss.push({soru:'',cevap:''});sv();rC();}
 function rmSSS(i){D.metinler.sss.splice(i,1);sv();rC();}
 function updSSS(i,k,v){D.metinler.sss[i][k]=v;sv();}
+
+/* ── SİTE ANALİZİ ───────────────────────── */
+let extData = null;
+const VALID_TYPES = ['kurumsal','eticaret','portfolio','blog','kisisel','restoran','saglik','egitim'];
+
+function showToast(msg, dur=3000) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.style.opacity = '0', dur);
+}
+
+async function doAnalyze() {
+  const urlEl = document.getElementById('eurl');
+  const out = document.getElementById('az-out');
+  const btn = document.getElementById('az-btn');
+  if (!urlEl || !out) return;
+
+  let url = urlEl.value.trim();
+  if (!url) { out.innerHTML = `<p class="az-err">Lütfen geçerli bir URL girin.</p>`; return; }
+  if (!url.startsWith('http')) url = 'https://' + url;
+
+  // Save URL
+  try { localStorage.setItem('wp_eu', url); } catch(x) {}
+
+  btn.disabled = true;
+  out.innerHTML = `<div class="az-loading"><div class="spinner"></div><span>Site içeriği alınıyor...</span></div>`;
+
+  try {
+    // Step 1: Try CORS proxies to get HTML content
+    let siteText = '';
+    const proxies = [
+      `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+      `https://corsproxy.io/?${encodeURIComponent(url)}`
+    ];
+    for (const proxy of proxies) {
+      try {
+        const r = await fetch(proxy, { signal: AbortSignal.timeout(7000) });
+        if (proxy.includes('allorigins')) {
+          const j = await r.json();
+          if (j.contents) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = j.contents;
+            tmp.querySelectorAll('script,style,nav,footer,header').forEach(el => el.remove());
+            siteText = tmp.innerText.replace(/\s+/g, ' ').trim().slice(0, 5000);
+            break;
+          }
+        } else {
+          const html = await r.text();
+          const tmp = document.createElement('div');
+          tmp.innerHTML = html;
+          tmp.querySelectorAll('script,style,nav,footer,header').forEach(el => el.remove());
+          siteText = tmp.innerText.replace(/\s+/g, ' ').trim().slice(0, 5000);
+          break;
+        }
+      } catch(x) {}
+    }
+
+    out.innerHTML = `<div class="az-loading"><div class="spinner"></div><span>Claude analiz ediyor...</span></div>`;
+
+    // Step 2: Send to Claude API
+    const domainMatch = url.match(/https?:\/\/(?:www\.)?([^\/]+)/);
+    const domain = domainMatch ? domainMatch[1] : url;
+
+    const contentPart = siteText
+      ? `Aşağıdaki site içeriğini analiz et:\n\nURL: ${url}\nİçerik:\n${siteText}`
+      : `Bu URL'yi analiz et: ${url}`;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        system: 'Sen bir web sitesi veri çıkarma asistanısın. Her zaman SADECE geçerli JSON ile yanıt ver — markdown, açıklama veya kod bloğu olmadan.',
+        messages: [{
+          role: 'user',
+          content: `${contentPart}\n\nBu web sitesinin işletme bilgilerini çıkar ve sadece aşağıdaki JSON formatında Türkçe yanıt ver. Bulunamayan alanları boş bırak. siteType için sadece şu değerlerden birini kullan: kurumsal, eticaret, portfolio, blog, kisisel, restoran, saglik, egitim\n\n{"firmaAdi":"","slogan":"","altBaslik":"","hakkimizda":"","hizmetler":"","nedenBiz":"","telefon":"","email":"","adres":"","calismaS":"","siteType":"","instagram":"","facebook":"","linkedin":"","twitter":"","youtube":"","domainAdi":"${domain}"}`
+        }]
+      })
+    });
+
+    if (!resp.ok) throw new Error('API error: ' + resp.status);
+    const apiData = await resp.json();
+    const raw = apiData.content?.find(c => c.type === 'text')?.text || '{}';
+    const clean = raw.replace(/```json\n?|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    // Validate & store
+    if (parsed.siteType && !VALID_TYPES.includes(parsed.siteType)) parsed.siteType = '';
+    extData = parsed;
+
+    out.innerHTML = buildAzPreview(parsed, url);
+
+  } catch(x) {
+    console.error(x);
+    out.innerHTML = `<p class="az-err">⚠ Analiz sırasında hata oluştu. Lütfen URL'yi kontrol edin veya formu manuel doldurun.<br><small style="opacity:.7">${x.message||''}</small></p>`;
+  }
+
+  btn.disabled = false;
+}
+
+function buildAzPreview(d, url) {
+  const rows = [
+    ['Firma adı', d.firmaAdi],
+    ['Site türü', d.siteType ? (STLS[d.siteType] || d.siteType) : ''],
+    ['Slogan', d.slogan],
+    ['Alt başlık', d.altBaslik],
+    ['Hakkımızda', d.hakkimizda ? d.hakkimizda.slice(0, 90) + '...' : ''],
+    ['Hizmetler', d.hizmetler ? d.hizmetler.slice(0, 90) + '...' : ''],
+    ['Neden biz', d.nedenBiz ? d.nedenBiz.slice(0, 90) + '...' : ''],
+    ['Telefon', d.telefon],
+    ['E-posta', d.email],
+    ['Adres', d.adres],
+    ['Çalışma saatleri', d.calismaS],
+    ['Instagram', d.instagram],
+    ['LinkedIn', d.linkedin],
+    ['Facebook', d.facebook],
+    ['Twitter / X', d.twitter],
+    ['YouTube', d.youtube],
+  ].filter(([, v]) => v);
+
+  if (!rows.length) {
+    return `<p class="az-err">Site içeriği çıkarılamadı. Formu manuel doldurun.</p>`;
+  }
+
+  return `<div class="az-preview">
+    <p class="az-preview-title">✓ ${rows.length} alan bulundu — inceleyip uygulayın</p>
+    ${rows.map(([k, v]) => `<div class="az-preview-row"><span class="az-pk">${k}</span><span class="az-pv">${ec(v)}</span></div>`).join('')}
+    <button class="az-apply" onclick="applyExtData()">Verileri Forma Uygula →</button>
+  </div>`;
+}
+
+function applyExtData() {
+  if (!extData) return;
+  const d = extData;
+
+  // Proje
+  if (d.firmaAdi) D.proje.firmaAdi = d.firmaAdi;
+  if (d.siteType && VALID_TYPES.includes(d.siteType)) D.proje.siteType = d.siteType;
+
+  // Metinler
+  const mt = D.metinler;
+  if (d.slogan) mt.slogan = d.slogan;
+  if (d.altBaslik) mt.altBaslik = d.altBaslik;
+  if (d.hakkimizda) mt.hakkimizda = d.hakkimizda;
+  if (d.hizmetler) mt.hizmetler = d.hizmetler;
+  if (d.nedenBiz) mt.nedenBiz = d.nedenBiz;
+  if (d.telefon) mt.telefon = d.telefon;
+  if (d.email) mt.email = d.email;
+  if (d.adres) mt.adres = d.adres;
+  if (d.calismaS) mt.calismaS = d.calismaS;
+
+  // Teknik
+  const tk = D.teknik;
+  if (d.domainAdi) tk.domainAdi = d.domainAdi;
+  if (d.instagram) tk.instagram = d.instagram;
+  if (d.facebook) tk.facebook = d.facebook;
+  if (d.linkedin) tk.linkedin = d.linkedin;
+  if (d.twitter) tk.twitter = d.twitter;
+  if (d.youtube) tk.youtube = d.youtube;
+  if (d.domainAdi) tk.domainDurumu = 'mevcut';
+
+  sv();
+  extData = null;
+  showToast('✓ Veriler başarıyla aktarıldı! İnceleyip düzenleyebilirsiniz.');
+  rSB();
+  rC();
+}
 
 /* ── START ──────────────────────────────── */
 init();
