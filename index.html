@@ -202,6 +202,20 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
 }
 </style>
 </head>
+</head>
+<!-- ═══════════════════════════════════════════════════
+     Firebase KURULUM TALİMATLARI  (tek seferlik, 3 dakika)
+     ════════════════════════════════════════════════════
+     1. console.firebase.google.com → "Proje Ekle" → isim ver → oluştur
+     2. Sol menü → "Realtime Database" → "Veri tabanı oluştur"
+        → "Test modunda başlat" seç → "Etkinleştir"
+     3. Açılan sayfadaki URL'yi kopyala:
+        https://PROJE-ADINIZ-default-rtdb.firebaseio.com
+     4. Aşağıdaki FIREBASE_URL satırına yapıştır.
+     ═══════════════════════════════════════════════════ -->
+<script>
+const FIREBASE_URL = 'https://webtasarim-27362-default-rtdb.firebaseio.com';
+</script>
 <body>
 <div id="toast"></div>
 <!-- Mobile header bar -->
@@ -252,21 +266,42 @@ let AN=Object.fromEntries(FS.map(s=>[s,'']));         // adminNotes
 let OS='draft'; // overallStatus
 
 /* ── SESSION ID ─────────────────────────── */
+/* ── FIREBASE HELPERS ───────────────────── */
+function fbOk(){return FIREBASE_URL&&FIREBASE_URL!=='BURAYA_FIREBASE_URL';}
+function fbUrl(path){return FIREBASE_URL.replace(/\/$/,'')+'/'+path+'.json';}
+
+async function fbGet(path){
+  if(!fbOk())return null;
+  try{const r=await fetch(fbUrl(path));if(!r.ok)return null;const d=await r.json();return d;}catch(x){return null;}
+}
+async function fbSet(path,data){
+  if(!fbOk())return false;
+  try{const r=await fetch(fbUrl(path),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});return r.ok;}catch(x){return false;}
+}
+async function fbPatch(path,data){
+  if(!fbOk())return false;
+  try{const r=await fetch(fbUrl(path),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});return r.ok;}catch(x){return false;}
+}
+async function fbDel(path){
+  if(!fbOk())return false;
+  try{const r=await fetch(fbUrl(path),{method:'DELETE'});return r.ok;}catch(x){return false;}
+}
+
 let sid;
 try{sid=localStorage.getItem('wp_sid');if(!sid){sid=Date.now().toString(36)+Math.random().toString(36).slice(2,8);localStorage.setItem('wp_sid',sid);localStorage.setItem('wp_st',Date.now());}}catch(x){sid='a'+Math.random().toString(36).slice(2,8);}
 
 /* ── INIT ───────────────────────────────── */
 async function init(){
   let loaded=false;
-  // 1) Try shared storage (real-time sync)
+  // 1) Firebase'den yükle
   try{
-    const r=await window.storage.get('sub:'+sid,true);
-    if(r?.value){
-      const en=JSON.parse(r.value);
+    const en=await fbGet('submissions/'+sid);
+    if(en&&en.data){
       if(en.sectionStatus)SS={...SS,...en.sectionStatus};
       if(en.adminNotes)AN={...AN,...en.adminNotes};
       if(en.status)OS=en.status;
-      if(en.data){const df=fr(),ld=en.data;D={...df,...ld,proje:{...df.proje,...(ld.proje||{})},marka:{...df.marka,...(ld.marka||{})},metinler:{...df.metinler,...(ld.metinler||{})},medya:{...df.medya,...(ld.medya||{})},teknik:{...df.teknik,...(ld.teknik||{})}};}
+      const df=fr(),ld=en.data;
+      D={...df,...ld,proje:{...df.proje,...(ld.proje||{})},marka:{...df.marka,...(ld.marka||{})},metinler:{...df.metinler,...(ld.metinler||{})},medya:{...df.medya,...(ld.medya||{})},teknik:{...df.teknik,...(ld.teknik||{})}};
       loaded=true;
     }
   }catch(x){}
@@ -291,11 +326,11 @@ async function sv(){
   if(si){si.classList.add('show');clearTimeout(si._t);si._t=setTimeout(()=>si.classList.remove('show'),1500);}
   try{
     let en;
-    try{const r=await window.storage.get('sub:'+sid,true);en=r?.value?JSON.parse(r.value):mkEntry();}catch(x){en=mkEntry();}
+    try{const fb=await fbGet('submissions/'+sid);en=fb||mkEntry();}catch(x){en=mkEntry();}
     en.data=D;en.lastUpdated=Date.now();en.firmaAdi=D.proje.firmaAdi||'İsimsiz';en.siteType=D.proje.siteType||'';en.progress=pct();
     if(!en.sectionStatus)en.sectionStatus={...SS};
     if(!en.adminNotes)en.adminNotes={...AN};
-    await window.storage.set('sub:'+sid,JSON.stringify(en),true);
+    await fbSet('submissions/'+sid,en);
   }catch(x){}
 }
 
@@ -491,6 +526,12 @@ function rTk(){
 /* ── ÖZET ───────────────────────────────── */
 function rOz(){
   const p=pct(),hasRev=FS.some(s=>SS[s]==='revision'),isSub=OS==='submitted';
+  const fbReady=fbOk();
+  const ejsWarn=!fbReady?`<div style="background:#FAEEDA;border:1.5px solid #BA7517;border-radius:var(--radius);padding:11px 15px;margin-bottom:14px;font-size:13px;color:#6B3A00">
+    <strong>⚠ Firebase henüz yapılandırılmadı.</strong><br>
+    <span style="opacity:.85">HTML dosyasını açıp <code>FIREBASE_URL</code> değerini doldurun.<br>
+    Yapılandırana kadar veriler yalnızca tarayıcıya kaydedilir ve tasarımcı panelinde görünmez.</span>
+  </div>`:'';
   const si={approved:'✓',revision:'⚠',pending:'○'};
   const sc={approved:'var(--teal-dark)',revision:'#6B3A00',pending:'var(--text3)'};
   const sb={approved:'var(--teal-light)',revision:'var(--amber-light)',pending:'var(--bg3)'};
@@ -501,6 +542,7 @@ function rOz(){
   }).join('');
   const submitBlock=isSub&&!hasRev?`<div class="sub-banner"><span style="font-size:22px">✓</span><div><p style="font-size:14px;font-weight:700;color:var(--teal-dark)">Form gönderildi, inceleniyor.</p><p style="font-size:13px;color:var(--teal-dark);margin-top:3px">Tasarımcı değerlendirmesinin ardından haberdar edileceksiniz.</p></div></div>`:`<button class="btn-submit" onclick="doSub()">${hasRev?'Revizyonları Gönder — Tasarımcıya İlet':'Formu Gönder — Tasarımcıya İlet'}</button>`;
   return`<div class="card"><h2 class="card-title">Özet & Gönder</h2><p class="card-desc">Bölümlerin durumu. Eksik veya revizyon istenen bölümlere tıklayarak düzeltebilirsiniz.</p>
+  ${ejsWarn}
   <div style="background:var(--bg3);border-radius:var(--radius);padding:11px 15px;margin-bottom:15px;display:flex;align-items:center;gap:14px"><div style="flex:1"><p style="font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Genel tamamlanma</p><div style="height:6px;background:var(--border);border-radius:3px"><div style="height:100%;width:${p}%;background:var(--teal);border-radius:3px;transition:width .3s"></div></div></div><span style="font-size:20px;font-weight:800;color:var(--teal-dark)">${p}%</span></div>
   ${rows}${submitBlock}
   <button class="btn-reset" onclick="resetAll()">Formu Sıfırla</button></div>`;
@@ -508,20 +550,104 @@ function rOz(){
 
 /* ── SUBMIT ─────────────────────────────── */
 async function doSub(){
-  // Reset revision→pending after client resubmits
+  // Disable submit button
+  const btn=document.querySelector('.btn-submit');
+  if(btn){btn.disabled=true;btn.textContent='Gönderiliyor...';}
+
+  // Build plain-text summary for email
+  function val(v){return v&&String(v).trim()?String(v).trim():null;}
+  function block(title,lines){const l=lines.filter(Boolean);return l.length?`[${title}]\n${l.join('\n')}\n`:''}
+  const p=D.proje,mt=D.metinler,mk=D.marka,tk=D.teknik;
+  const ozet=[
+    block('PROJe BİLGİLERİ',[
+      val(p.firmaAdi)&&`Firma: ${p.firmaAdi}`,
+      val(STLS[p.siteType])&&`Site türü: ${STLS[p.siteType]}`,
+      val(p.sektor)&&`Sektör: ${p.sektor}`,
+      val(p.hedefKitle)&&`Hedef kitle: ${p.hedefKitle}`,
+      val(p.deadline)&&`Teslim tarihi: ${p.deadline}`,
+      val(p.aciklama)&&`Açıklama: ${p.aciklama}`,
+    ]),
+    block('MARKA KİMLİĞİ',[
+      mk.logo?'Logo: Yüklendi':'',
+      mk.renkler.length&&`Renkler: ${mk.renkler.join(', ')}`,
+      val(mk.fontTercihi)&&`Font: ${mk.fontTercihi}`,
+      val(mk.markaNot)&&`Marka notu: ${mk.markaNot}`,
+    ]),
+    block('İÇERİK METİNLERİ',[
+      val(mt.slogan)&&`Slogan: ${mt.slogan}`,
+      val(mt.altBaslik)&&`Alt başlık: ${mt.altBaslik}`,
+      val(mt.ctaButon)&&`CTA: ${mt.ctaButon}`,
+      val(mt.hakkimizda)&&`Hakkımızda: ${mt.hakkimizda}`,
+      val(mt.vizyon)&&`Vizyon: ${mt.vizyon}`,
+      val(mt.misyon)&&`Misyon: ${mt.misyon}`,
+      val(mt.degerlerimiz)&&`Değerler: ${mt.degerlerimiz}`,
+      val(mt.hizmetler)&&`Hizmetler: ${mt.hizmetler}`,
+      val(mt.nedenBiz)&&`Neden biz: ${mt.nedenBiz}`,
+      val(mt.ekip)&&`Ekip: ${mt.ekip}`,
+      val(mt.footerMetin)&&`Footer: ${mt.footerMetin}`,
+      val(mt.telif)&&`Telif: ${mt.telif}`,
+      (mt.referanslar||[]).length&&`Referans sayısı: ${mt.referanslar.length} adet`,
+      (mt.sss||[]).length&&`SSS sayısı: ${mt.sss.length} soru`,
+    ]),
+    block('İLETİŞİM',[
+      val(mt.telefon)&&`Telefon: ${mt.telefon}`,
+      val(mt.email)&&`E-posta: ${mt.email}`,
+      val(mt.adres)&&`Adres: ${mt.adres}`,
+      val(mt.calismaS)&&`Çalışma saatleri: ${mt.calismaS}`,
+    ]),
+    D.urunler.length?block('ÜRÜNLER & HİZMETLER',D.urunler.map((u,i)=>`#${i+1} ${u.ad}${u.fiyat?' ('+u.fiyat+')':''}${u.aciklama?' — '+u.aciklama.slice(0,80):''}`)): '',
+    (D.medya.gorseller||[]).length||D.medya.videolar.length?block('MEDYA',[
+      (D.medya.gorseller||[]).length&&`Görseller: ${D.medya.gorseller.length} adet`,
+      D.medya.videolar.filter(v=>v.url).length&&`Videolar: ${D.medya.videolar.filter(v=>v.url).map(v=>v.url).join(', ')}`,
+    ]):'',
+    D.rakipler.filter(r=>r.url).length?block('RAKİP SİTELER',D.rakipler.filter(r=>r.url).map((r,i)=>`#${i+1} ${r.url}${r.not?' — '+r.not:''}`)): '',
+    block('TEKNİK DETAYLAR',[
+      val(tk.domainDurumu)&&`Domain durumu: ${tk.domainDurumu}`,
+      val(tk.domainAdi)&&`Domain: ${tk.domainAdi}`,
+      val(tk.hostingTercihi)&&`Hosting: ${tk.hostingTercihi}`,
+      tk.ssl&&'SSL: Gerekli',
+      val(tk.instagram)&&`Instagram: ${tk.instagram}`,
+      val(tk.facebook)&&`Facebook: ${tk.facebook}`,
+      val(tk.linkedin)&&`LinkedIn: ${tk.linkedin}`,
+      val(tk.twitter)&&`Twitter/X: ${tk.twitter}`,
+      val(tk.youtube)&&`YouTube: ${tk.youtube}`,
+      val(tk.ekNotlar)&&`Ek notlar: ${tk.ekNotlar}`,
+    ]),
+  ].filter(Boolean).join('\n');
+
+  const templateParams={
+    firma:       val(p.firmaAdi)||'Belirtilmedi',
+    site_turu:   STLS[p.siteType]||'Belirtilmedi',
+    teslim:      val(p.deadline)||'Belirtilmedi',
+    iletisim:    [val(mt.telefon),val(mt.email),val(mt.adres)].filter(Boolean).join(' / ')||'Belirtilmedi',
+    slogan:      val(mt.slogan)||'',
+    hizmetler:   val(mt.hizmetler)||'',
+    urun_sayisi: String(D.urunler.length),
+    domain:      val(tk.domainAdi)||val(tk.domainDurumu)||'Belirtilmedi',
+    tamamlanma:  pct()+'%',
+    ozet,
+    gonderim_tarihi: new Date().toLocaleString('tr-TR'),
+  };
+
+  // Reset revisions
   FS.forEach(s=>{if(SS[s]==='revision')SS[s]='pending';});
   OS='submitted';
+
+  // Firebase'e kaydet
   try{
     let en;
-    try{const r=await window.storage.get('sub:'+sid,true);en=r?.value?JSON.parse(r.value):mkEntry();}catch(x){en=mkEntry();}
+    try{const fb=await fbGet('submissions/'+sid);en=fb||mkEntry();}catch(x){en=mkEntry();}
     en.data=D;en.status='submitted';en.lastUpdated=Date.now();en.progress=pct();
     if(!en.sectionStatus)en.sectionStatus={};
     FS.forEach(s=>{if(en.sectionStatus[s]==='revision')en.sectionStatus[s]='pending';});
     SS={...SS,...Object.fromEntries(FS.map(s=>[s,en.sectionStatus[s]||SS[s]]))};
     if(!en.adminNotes)en.adminNotes={};
-    await window.storage.set('sub:'+sid,JSON.stringify(en),true);
+    await fbSet('submissions/'+sid,en);
   }catch(x){}
   try{localStorage.setItem(STORAGE_KEY,JSON.stringify({data:D,SS,AN,OS}));}catch(x){}
+
+  if(btn){btn.disabled=false;btn.textContent='Formu Gönder — Tasarımcıya İlet';}
+  showToast(fbReady?'✓ Form başarıyla gönderildi!':'✓ Form kaydedildi (Firebase yapılandırılmamış).');
   rSB();rC();
 }
 
@@ -560,7 +686,7 @@ function stpAR(){clearInterval(autoRT);autoRT=null;}
 async function rD(){
   const ca=document.getElementById('ca');
   let subs=[];
-  try{const lr=await window.storage.list('sub:',true);for(const k of (lr?.keys||[])){try{const r=await window.storage.get(k,true);if(r?.value)subs.push(JSON.parse(r.value));}catch(x){}}subs.sort((a,b)=>b.lastUpdated-a.lastUpdated);}catch(x){}
+  try{const all=await fbGet('submissions');if(all)subs=Object.values(all);subs.sort((a,b)=>b.lastUpdated-a.lastUpdated);}catch(x){}
   if(!subs.length){ca.innerHTML=`<div class="card"><h2 class="card-title">Müşteri yanıtları</h2><p class="card-desc">Henüz yanıt gelmedi. Panelin bağlantısını müşterilerinizle paylaşın.</p><div style="text-align:center;padding:50px 20px;color:var(--text3)"><div style="font-size:48px;margin-bottom:12px">◯</div><p>Yanıt bekleniyor...</p></div></div>`;return;}
   const ctMap={draft:'Taslak',submitted:'Gönderildi',revision_needed:'Revizyon İstendi',completed:'Tamamlandı'};
   const cbMap={draft:'b-pend',submitted:'b-info',revision_needed:'b-rev',completed:'b-app'};
@@ -580,22 +706,22 @@ async function rD(){
 function togDet(sid2){if(expanded.has(sid2))expanded.delete(sid2);else expanded.add(sid2);rD();}
 
 async function aApp(sid2,fid){
-  try{const r=await window.storage.get('sub:'+sid2,true);if(!r?.value)return;const en=JSON.parse(r.value);if(!en.sectionStatus)en.sectionStatus={};en.sectionStatus[fid]='approved';if(!en.adminNotes)en.adminNotes={};en.adminNotes[fid]='';if(FS.every(s=>en.sectionStatus[s]==='approved'))en.status='completed';await window.storage.set('sub:'+sid2,JSON.stringify(en),true);rD();}catch(x){}
+  try{const en=await fbGet('submissions/'+sid2);if(!en)return;if(!en.sectionStatus)en.sectionStatus={};en.sectionStatus[fid]='approved';if(!en.adminNotes)en.adminNotes={};en.adminNotes[fid]='';if(FS.every(s=>en.sectionStatus[s]==='approved'))en.status='completed';await fbSet('submissions/'+sid2,en);rD();}catch(x){}
 }
 
 async function aRev(sid2,fid){
-  try{const r=await window.storage.get('sub:'+sid2,true);if(!r?.value)return;const en=JSON.parse(r.value);if(!en.sectionStatus)en.sectionStatus={};en.sectionStatus[fid]='revision';if(!en.adminNotes)en.adminNotes={};const ni=document.getElementById('an-'+fid+'-'+sid2);en.adminNotes[fid]=ni?ni.value:'';en.status='revision_needed';await window.storage.set('sub:'+sid2,JSON.stringify(en),true);rD();}catch(x){}
+  try{const en=await fbGet('submissions/'+sid2);if(!en)return;if(!en.sectionStatus)en.sectionStatus={};en.sectionStatus[fid]='revision';if(!en.adminNotes)en.adminNotes={};const ni=document.getElementById('an-'+fid+'-'+sid2);en.adminNotes[fid]=ni?ni.value:'';en.status='revision_needed';await fbSet('submissions/'+sid2,en);rD();}catch(x){}
 }
 
 async function aAppAll(sid2){
-  try{const r=await window.storage.get('sub:'+sid2,true);if(!r?.value)return;const en=JSON.parse(r.value);en.sectionStatus=Object.fromEntries(FS.map(s=>[s,'approved']));en.adminNotes=Object.fromEntries(FS.map(s=>[s,'']));en.status='completed';await window.storage.set('sub:'+sid2,JSON.stringify(en),true);rD();}catch(x){}
+  try{const en=await fbGet('submissions/'+sid2);if(!en)return;en.sectionStatus=Object.fromEntries(FS.map(s=>[s,'approved']));en.adminNotes=Object.fromEntries(FS.map(s=>[s,'']));en.status='completed';await fbSet('submissions/'+sid2,en);rD();}catch(x){}
 }
 
-async function dlSub(sid2){try{const r=await window.storage.get('sub:'+sid2,true);if(!r?.value)return;const en=JSON.parse(r.value);const s=JSON.stringify(en.data,null,2),b=new Blob([s],{type:'application/json'}),url=URL.createObjectURL(b),a=document.createElement('a');a.href=url;a.download=(en.firmaAdi||'musteri').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'')+'-brief.json';a.click();URL.revokeObjectURL(url);}catch(x){}}
+async function dlSub(sid2){try{const en=await fbGet('submissions/'+sid2);if(!en)return;const s=JSON.stringify(en.data,null,2),b=new Blob([s],{type:'application/json'}),url=URL.createObjectURL(b),a=document.createElement('a');a.href=url;a.download=(en.firmaAdi||'musteri').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'')+'-brief.json';a.click();URL.revokeObjectURL(url);}catch(x){}}
 
-async function dlAll(){try{const lr=await window.storage.list('sub:',true);const all=[];for(const k of (lr?.keys||[])){try{const r=await window.storage.get(k,true);if(r?.value)all.push(JSON.parse(r.value));}catch(x){}}const s=JSON.stringify(all,null,2),b=new Blob([s],{type:'application/json'}),url=URL.createObjectURL(b),a=document.createElement('a');a.href=url;a.download='tum-yanitlar.json';a.click();URL.revokeObjectURL(url);}catch(x){}}
+async function dlAll(){try{const all=await fbGet('submissions');const arr=all?Object.values(all):[];const s=JSON.stringify(arr,null,2),b=new Blob([s],{type:'application/json'}),url=URL.createObjectURL(b),a=document.createElement('a');a.href=url;a.download='tum-yanitlar.json';a.click();URL.revokeObjectURL(url);}catch(x){}}
 
-async function delSub(sid2){if(!confirm('Bu yanıt silinsin mi?'))return;try{await window.storage.delete('sub:'+sid2,true);}catch(x){}expanded.delete(sid2);rD();}
+async function delSub(sid2){if(!confirm('Bu yanıt silinsin mi?'))return;try{await fbDel('submissions/'+sid2);}catch(x){}expanded.delete(sid2);rD();}
 
 function addRef(){D.metinler.referanslar.push({ad:'',unvan:'',yorum:''});sv();rC();}
 function rmRef(i){D.metinler.referanslar.splice(i,1);sv();rC();}
